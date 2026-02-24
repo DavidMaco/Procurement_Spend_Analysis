@@ -2,6 +2,12 @@
 
 Production-style analytics case study showing how procurement data can be transformed into quantified savings actions.
 
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)
+![Analytics](https://img.shields.io/badge/Focus-Procurement%20Analytics-0A66C2)
+![Status](https://img.shields.io/badge/Status-Production--Style%20Portfolio-2E8B57)
+![License](https://img.shields.io/badge/License-Portfolio%20Use-lightgrey)
+
 ## Executive Highlights
 
 - Total analyzed spend: NGN 310.39B
@@ -45,6 +51,29 @@ Core data and outputs:
 - supplier_performance.csv
 - price_variance_top20.csv
 - monthly_spend_by_category.csv
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[generate_data.py] --> B[suppliers.csv
+materials.csv
+purchase_orders.csv
+quality_incidents.csv]
+    B --> C[create_db.py]
+    C --> D[procurement.db]
+    D --> E[analyze_procurement.py]
+    E --> F[procurement_insights.json]
+    E --> G[procurement_insights_summary.csv]
+    D --> H[analysis_queries.sql]
+    D --> I[category_spend.csv
+supplier_performance.csv
+price_variance_top20.csv
+monthly_spend_by_category.csv]
+    F --> J[EXECUTIVE_REPORT.md]
+    F --> K[EXECUTIVE_REPORT_ONE_PAGE.html]
+    F --> L[EXECUTIVE_REPORT_ONE_PAGE.pdf]
+```
 
 ## Analytical Scope
 
@@ -183,6 +212,17 @@ Use these prepared files:
 - price_variance_top20.csv
 - monthly_spend_by_category.csv
 - procurement_insights_summary.csv
+
+## Dashboard Screenshots
+
+Screenshot placeholders are organized for recruiter-ready presentation:
+
+- docs/screenshots/01-executive-dashboard.png
+- docs/screenshots/02-supplier-performance.png
+- docs/screenshots/03-savings-opportunities.png
+- docs/screenshots/04-risk-analysis.png
+
+Guidance and naming conventions are documented in docs/screenshots/README.md.
 
 ## Skills Demonstrated
 
