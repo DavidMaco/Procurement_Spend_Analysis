@@ -34,6 +34,8 @@ Core scripts:
 - create_db.py: CSV-to-SQLite load, indexing, and analytics view creation
 - analyze_procurement.py: KPI and savings opportunity computation, JSON export
 - analysis_queries.sql: reusable SQL for executive and analyst workflows
+- optimization_engine.py: score-based supplier allocation optimization and projected savings
+- scenario_analysis.py: conservative/base/aggressive sensitivity modeling
 
 Core data and outputs:
 
@@ -44,6 +46,7 @@ Core data and outputs:
 - procurement.db
 - procurement_insights.json
 - procurement_insights_summary.csv
+- scenario_assumptions.json
 - EXECUTIVE_REPORT.md
 - EXECUTIVE_REPORT_ONE_PAGE.html
 - EXECUTIVE_REPORT_ONE_PAGE.pdf
@@ -51,6 +54,8 @@ Core data and outputs:
 - supplier_performance.csv
 - price_variance_top20.csv
 - monthly_spend_by_category.csv
+- supplier_optimization_recommendations.csv
+- savings_scenarios.csv
 
 ## Architecture
 
@@ -148,7 +153,7 @@ cd Procurement_Spend_Analysis
 
 ```bash
 python -m pip install --upgrade pip
-python -m pip install pandas numpy reportlab
+python -m pip install -r requirements.txt
 ```
 
 ### 3) Run the full pipeline
@@ -164,6 +169,14 @@ python analyze_procurement.py
 - procurement_insights.json
 - procurement_insights_summary.csv
 - EXECUTIVE_REPORT_ONE_PAGE.pdf
+- supplier_optimization_recommendations.csv
+- savings_scenarios.csv
+
+### 5) Run tests
+
+```bash
+python -m pytest -q
+```
 
 ## Data Dictionary (Condensed)
 
@@ -188,6 +201,8 @@ python analyze_procurement.py
 - Fixed random seeds in data generation for repeatable outputs.
 - Integrity checks performed on primary keys and cross-table references.
 - Scripted pipeline produces deterministic file artifacts for portfolio demonstration.
+- Unit tests cover optimization and scenario modules.
+- CI workflow executes tests on push and pull request via GitHub Actions.
 
 ## Limitations and Assumptions
 

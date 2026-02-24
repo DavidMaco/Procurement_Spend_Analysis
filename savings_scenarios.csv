@@ -1,0 +1,4 @@
+scenario,price_standardization_savings_ngn,performance_improvement_savings_ngn,consolidation_savings_ngn,total_savings_ngn,savings_pct_of_spend
+Conservative,12918267559.4,108854652010.77,0.0,121772919570.17,39.2322
+Base,18454667942.0,167468695401.19,0.0,185923363343.19,59.8998
+Aggressive,22145601530.4,192588999711.37,0.0,214734601241.77,69.1821

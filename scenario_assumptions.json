@@ -1,0 +1,29 @@
+{
+  "supplier_optimization": {
+    "max_suppliers_per_category": 3,
+    "min_supplier_share": 0.15,
+    "score_weights": {
+      "unit_cost": 0.45,
+      "delivery": 0.30,
+      "quality": 0.15,
+      "risk": 0.10
+    }
+  },
+  "sensitivity_scenarios": {
+    "Conservative": {
+      "price_standardization": 0.7,
+      "performance_improvement": 0.65,
+      "consolidation": 0.6
+    },
+    "Base": {
+      "price_standardization": 1.0,
+      "performance_improvement": 1.0,
+      "consolidation": 1.0
+    },
+    "Aggressive": {
+      "price_standardization": 1.2,
+      "performance_improvement": 1.15,
+      "consolidation": 1.25
+    }
+  }
+}

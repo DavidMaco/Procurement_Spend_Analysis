@@ -7,11 +7,17 @@ import pandas as pd
 import sqlite3
 import json
 
+from optimization_engine import run_supplier_optimization
+from scenario_analysis import run_sensitivity_analysis
+
 def run_analysis():
     """Run comprehensive procurement analysis"""
     
     # Connect to database
     conn = sqlite3.connect('procurement.db')
+
+    with open('scenario_assumptions.json', 'r') as f:
+        assumptions = json.load(f)
     
     print("=" * 80)
     print("PROCUREMENT SPEND ANALYSIS & SUPPLIER OPTIMIZATION")
@@ -229,6 +235,42 @@ def run_analysis():
     
     insights['total_savings'] = float(total_savings)
     insights['savings_percentage'] = float(total_savings/total_spend*100)
+
+    # 9. Decision Optimization (Supplier Allocation)
+    print("\n🧠 DECISION ENGINE: Supplier Allocation Optimization")
+    print("-" * 80)
+
+    optimization_cfg = assumptions.get('supplier_optimization', {})
+    optimization_df, optimization_summary = run_supplier_optimization(
+        conn=conn,
+        max_suppliers_per_category=int(optimization_cfg.get('max_suppliers_per_category', 3)),
+        min_supplier_share=float(optimization_cfg.get('min_supplier_share', 0.15)),
+        score_weights=optimization_cfg.get('score_weights', None),
+    )
+
+    if not optimization_df.empty:
+        optimization_df.to_csv('supplier_optimization_recommendations.csv', index=False)
+        print(f"Recommended allocations generated: {len(optimization_df):,} rows")
+        print(
+            f"Estimated optimization savings: ₦{optimization_summary['optimization_savings_ngn']:,.0f} "
+            f"({optimization_summary['optimization_savings_pct']:.2f}% of historical spend baseline)"
+        )
+    else:
+        print("No optimization recommendations generated from current data.")
+
+    insights['optimization_savings'] = float(optimization_summary.get('optimization_savings_ngn', 0.0))
+    insights['optimization_savings_pct'] = float(optimization_summary.get('optimization_savings_pct', 0.0))
+
+    # 10. Sensitivity Analysis
+    print("\n📉 SENSITIVITY ANALYSIS: Conservative to Aggressive")
+    print("-" * 80)
+
+    sensitivity_df = run_sensitivity_analysis(
+        insights=insights,
+        scenario_factors=assumptions.get('sensitivity_scenarios', {}),
+    )
+    sensitivity_df.to_csv('savings_scenarios.csv', index=False)
+    print(sensitivity_df.to_string(index=False))
     
     # Save insights to JSON
     with open('procurement_insights.json', 'w') as f:

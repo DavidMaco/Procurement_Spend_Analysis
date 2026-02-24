@@ -1,10 +1,12 @@
 metric,value,unit
-Total Spend,310390475723,NGN
-Price Standardization Savings,18454667942,NGN
-Supplier Performance Savings,167468695401,NGN
-Supplier Consolidation Savings,0,NGN
-Total Savings Potential,185923363343,NGN
-Savings Percentage,59.8998287271,percent
-Maverick Spend,40606789538,NGN
-USD Spend,132407703,USD
-FX Volatility,99.8438124750,percent
+Total Spend,310390475723.0,NGN
+Price Standardization Savings,18454667942.0,NGN
+Supplier Performance Savings,167468695401.19,NGN
+Supplier Consolidation Savings,0.0,NGN
+Optimization Savings,15684138060.312317,NGN
+Total Savings Potential,185923363343.19,NGN
+Savings Percentage,59.89982872706201,percent
+Optimization Savings Percentage,5.053034576461642,percent
+Maverick Spend,40606789538.0,NGN
+USD Spend,132407703.0,USD
+FX Volatility,99.84381247501,percent

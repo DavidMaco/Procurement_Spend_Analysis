@@ -7,5 +7,7 @@
   "usd_spend": 132407703.0,
   "fx_volatility": 99.84381247501,
   "total_savings": 185923363343.19,
-  "savings_percentage": 59.89982872706201
+  "savings_percentage": 59.89982872706201,
+  "optimization_savings": 15684138060.312317,
+  "optimization_savings_pct": 5.053034576461642
 }
