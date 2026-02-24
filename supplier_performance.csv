@@ -1,0 +1,30 @@
+supplier_name,category,country,total_orders,total_spend_ngn,on_time_delivery_pct,quality_incidents,total_quality_cost,performance_grade
+Raw Materials Supplier 8 (USA),Raw Materials,USA,128,173961948459.0,40.16,13,24089878548.0,D
+Services Supplier 12 (IND),Services,India,100,97116151073.0,41.49,8,18802699109.0,D
+Raw Materials Supplier 6 (NIG),Raw Materials,Nigeria,128,88168263425.0,40.17,6,18933150049.0,D
+Raw Materials Supplier 7 (NIG),Raw Materials,Nigeria,105,87348992982.0,41.41,8,12939516896.0,D
+Raw Materials Supplier 2 (UK),Raw Materials,UK,127,82765161029.0,35.48,7,20613319413.0,D
+Raw Materials Supplier 5 (NIG),Raw Materials,Nigeria,129,78781921416.0,35.77,6,7783593255.0,D
+Equipment Supplier 7 (GER),Equipment,Germany,80,72748112341.0,40.0,7,11841108345.0,D
+Packaging Supplier 11 (IND),Packaging,India,68,72320763332.0,40.0,8,5840764375.0,D
+Equipment Supplier 8 (NIG),Equipment,Nigeria,86,66133649411.0,49.37,6,9451233498.0,D
+Equipment Supplier 1 (NIG),Equipment,Nigeria,85,66040670805.0,45.95,6,10611862885.0,D
+Services Supplier 3 (CHI),Services,China,80,60266052734.0,54.05,6,13847857186.0,D
+Equipment Supplier 3 (NIG),Equipment,Nigeria,78,56515811867.0,38.03,5,6259739391.0,C
+Services Supplier 10 (NIG),Services,Nigeria,78,55266959662.0,31.43,6,13286359194.0,D
+Equipment Supplier 5 (IND),Equipment,India,84,54790232425.0,46.75,5,7434863292.0,C
+Packaging Supplier 3 (NIG),Packaging,Nigeria,84,54247813382.0,43.21,4,19970610250.0,C
+Packaging Supplier 10 (IND),Packaging,India,74,54202999323.0,42.03,6,12726575988.0,D
+Services Supplier 4 (NIG),Services,Nigeria,73,47619599169.0,36.62,5,5261123058.0,C
+Services Supplier 5 (NIG),Services,Nigeria,85,47362379896.0,51.22,5,3696089347.0,C
+Packaging Supplier 1 (CHI),Packaging,China,68,46198349851.0,44.62,5,6835868151.0,C
+Services Supplier 9 (NIG),Services,Nigeria,82,41888302492.0,45.45,4,2855175550.0,C
+Packaging Supplier 8 (NIG),Packaging,Nigeria,78,37444404017.0,42.03,3,2510348760.0,C
+Packaging Supplier 5 (USA),Packaging,USA,85,37265499562.0,38.67,3,6905167268.0,C
+Services Supplier 2 (NIG),Services,Nigeria,65,34647765653.0,46.77,4,5444200778.0,C
+Packaging Supplier 2 (CHI),Packaging,China,78,31778896387.0,43.06,3,3135551461.0,C
+Equipment Supplier 9 (IND),Equipment,India,81,29588714950.0,45.21,3,1183594666.0,C
+Equipment Supplier 2 (CHI),Equipment,China,67,28124689954.0,40.63,3,5817302650.0,C
+Packaging Supplier 6 (NIG),Packaging,Nigeria,72,22153528548.0,29.41,2,2207717842.0,C
+Equipment Supplier 6 (IND),Equipment,India,75,15505230437.0,38.81,2,4067713832.0,C
+Services Supplier 11 (CHI),Services,China,77,7794254778.0,43.06,1,7940578110.0,C

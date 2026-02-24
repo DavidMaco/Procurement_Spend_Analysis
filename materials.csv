@@ -1,0 +1,72 @@
+material_id,material_name,category,unit_of_measure,standard_price_ngn,lead_time_days
+MAT2000,Raw Materials Item 1,Raw Materials,LTR,219330.99,73
+MAT2001,Raw Materials Item 2,Raw Materials,PCS,60941.6,35
+MAT2002,Raw Materials Item 3,Raw Materials,KG,169373.74,82
+MAT2003,Raw Materials Item 4,Raw Materials,MT,294425.84,7
+MAT2004,Raw Materials Item 5,Raw Materials,KG,354066.55,14
+MAT2005,Raw Materials Item 6,Raw Materials,MT,34166.46,11
+MAT2006,Raw Materials Item 7,Raw Materials,LTR,35893.25,37
+MAT2007,Raw Materials Item 8,Raw Materials,LTR,334654.4,34
+MAT2008,Raw Materials Item 9,Raw Materials,MT,361814.61,80
+MAT2009,Raw Materials Item 10,Raw Materials,PCS,121877.12,67
+MAT2010,Raw Materials Item 11,Raw Materials,PCS,95609.75,19
+MAT2011,Raw Materials Item 12,Raw Materials,PCS,177471.63,59
+MAT2012,Raw Materials Item 13,Raw Materials,PCS,431986.46,13
+MAT2013,Raw Materials Item 14,Raw Materials,KG,30776.03,50
+MAT2014,Raw Materials Item 15,Raw Materials,KG,124703.84,31
+MAT2015,Raw Materials Item 16,Raw Materials,PCS,70521.06,30
+MAT2016,Raw Materials Item 17,Raw Materials,LTR,231582.72,16
+MAT2017,Raw Materials Item 18,Raw Materials,PCS,404107.11,77
+MAT2018,Raw Materials Item 19,Raw Materials,KG,25768.87,76
+MAT2019,Raw Materials Item 20,Raw Materials,KG,484513.63,37
+MAT2020,Raw Materials Item 21,Raw Materials,MT,203503.82,68
+MAT2021,Packaging Item 1,Packaging,PCS,451270.21,28
+MAT2022,Packaging Item 2,Packaging,PCS,1576.61,56
+MAT2023,Packaging Item 3,Packaging,LTR,463295.78,65
+MAT2024,Packaging Item 4,Packaging,LTR,211792.24,78
+MAT2025,Packaging Item 5,Packaging,PCS,77821.01,44
+MAT2026,Packaging Item 6,Packaging,MT,484370.33,81
+MAT2027,Packaging Item 7,Packaging,KG,374113.79,14
+MAT2028,Packaging Item 8,Packaging,KG,292296.71,71
+MAT2029,Packaging Item 9,Packaging,MT,28911.35,72
+MAT2030,Packaging Item 10,Packaging,KG,425745.6,15
+MAT2031,Packaging Item 11,Packaging,KG,337768.67,37
+MAT2032,Packaging Item 12,Packaging,PCS,60383.36,79
+MAT2033,Packaging Item 13,Packaging,MT,289670.07,12
+MAT2034,Packaging Item 14,Packaging,KG,209902.85,81
+MAT2035,Packaging Item 15,Packaging,LTR,467385.78,33
+MAT2036,Packaging Item 16,Packaging,LTR,119723.63,57
+MAT2037,Packaging Item 17,Packaging,MT,336009.27,45
+MAT2038,Packaging Item 18,Packaging,PCS,158430.51,16
+MAT2039,Equipment Item 1,Equipment,PCS,310769.05,79
+MAT2040,Equipment Item 2,Equipment,KG,37093.73,34
+MAT2041,Equipment Item 3,Equipment,LTR,66662.06,51
+MAT2042,Equipment Item 4,Equipment,KG,439695.49,54
+MAT2043,Equipment Item 5,Equipment,LTR,79294.54,76
+MAT2044,Equipment Item 6,Equipment,LTR,306033.04,90
+MAT2045,Equipment Item 7,Equipment,KG,334097.67,77
+MAT2046,Equipment Item 8,Equipment,LTR,465912.14,20
+MAT2047,Equipment Item 9,Equipment,MT,132600.73,20
+MAT2048,Equipment Item 10,Equipment,MT,136537.93,84
+MAT2049,Equipment Item 11,Equipment,MT,358947.29,33
+MAT2050,Equipment Item 12,Equipment,LTR,252951.82,39
+MAT2051,Equipment Item 13,Equipment,KG,46603.08,61
+MAT2052,Equipment Item 14,Equipment,LTR,22521.34,49
+MAT2053,Equipment Item 15,Equipment,MT,318738.13,40
+MAT2054,Services Item 1,Services,PCS,276064.37,61
+MAT2055,Services Item 2,Services,KG,56381.0,26
+MAT2056,Services Item 3,Services,KG,417380.21,81
+MAT2057,Services Item 4,Services,MT,215178.46,12
+MAT2058,Services Item 5,Services,LTR,182643.43,12
+MAT2059,Services Item 6,Services,LTR,105433.23,38
+MAT2060,Services Item 7,Services,KG,177162.48,78
+MAT2061,Services Item 8,Services,PCS,486931.59,26
+MAT2062,Services Item 9,Services,MT,432370.55,29
+MAT2063,Services Item 10,Services,PCS,12880.79,49
+MAT2064,Services Item 11,Services,PCS,401216.45,38
+MAT2065,Services Item 12,Services,LTR,80019.32,20
+MAT2066,Services Item 13,Services,PCS,436147.31,67
+MAT2067,Services Item 14,Services,MT,100186.63,65
+MAT2068,Services Item 15,Services,LTR,152942.84,36
+MAT2069,Services Item 16,Services,MT,12320.39,31
+MAT2070,Services Item 17,Services,PCS,164466.84,15

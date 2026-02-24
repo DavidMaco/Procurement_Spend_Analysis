@@ -1,0 +1,41 @@
+supplier_id,supplier_name,category,country,payment_terms,currency,quality_rating,is_approved,risk_level
+SUP1000,Raw Materials Supplier 1 (IND),Raw Materials,India,Net 30,USD,4.48,False,Low
+SUP1001,Raw Materials Supplier 2 (UK),Raw Materials,UK,Net 60,USD,3.2,True,Low
+SUP1002,Raw Materials Supplier 3 (GER),Raw Materials,Germany,Net 60,USD,3.84,False,Low
+SUP1003,Raw Materials Supplier 4 (CHI),Raw Materials,China,Net 30,USD,4.01,False,Low
+SUP1004,Raw Materials Supplier 5 (NIG),Raw Materials,Nigeria,Net 60,NGN,4.3,True,Low
+SUP1005,Raw Materials Supplier 6 (NIG),Raw Materials,Nigeria,Net 45,NGN,4.18,True,Low
+SUP1006,Raw Materials Supplier 7 (NIG),Raw Materials,Nigeria,Net 30,NGN,4.4,True,Low
+SUP1007,Raw Materials Supplier 8 (USA),Raw Materials,USA,Net 30,USD,4.91,True,Low
+SUP1008,Packaging Supplier 1 (CHI),Packaging,China,Net 30,USD,3.72,True,Medium
+SUP1009,Packaging Supplier 2 (CHI),Packaging,China,Net 30,USD,4.46,True,High
+SUP1010,Packaging Supplier 3 (NIG),Packaging,Nigeria,Net 30,NGN,4.1,True,Medium
+SUP1011,Packaging Supplier 4 (UK),Packaging,UK,Net 60,USD,3.38,False,Low
+SUP1012,Packaging Supplier 5 (USA),Packaging,USA,Net 45,USD,4.97,True,Low
+SUP1013,Packaging Supplier 6 (NIG),Packaging,Nigeria,Net 45,NGN,3.56,True,Medium
+SUP1014,Packaging Supplier 7 (NIG),Packaging,Nigeria,Net 30,NGN,3.74,False,Medium
+SUP1015,Packaging Supplier 8 (NIG),Packaging,Nigeria,Net 60,NGN,4.87,True,Low
+SUP1016,Packaging Supplier 9 (NIG),Packaging,Nigeria,Net 60,NGN,4.46,False,High
+SUP1017,Packaging Supplier 10 (IND),Packaging,India,Net 45,USD,4.98,True,Low
+SUP1018,Packaging Supplier 11 (IND),Packaging,India,Net 60,USD,3.65,True,Low
+SUP1019,Equipment Supplier 1 (NIG),Equipment,Nigeria,Net 30,NGN,4.61,True,Low
+SUP1020,Equipment Supplier 2 (CHI),Equipment,China,Net 30,USD,4.83,True,Medium
+SUP1021,Equipment Supplier 3 (NIG),Equipment,Nigeria,Net 30,NGN,4.31,True,High
+SUP1022,Equipment Supplier 4 (NIG),Equipment,Nigeria,Net 30,NGN,3.53,False,Medium
+SUP1023,Equipment Supplier 5 (IND),Equipment,India,Net 60,USD,4.17,True,High
+SUP1024,Equipment Supplier 6 (IND),Equipment,India,Net 45,USD,3.44,True,High
+SUP1025,Equipment Supplier 7 (GER),Equipment,Germany,Net 30,USD,4.51,True,Low
+SUP1026,Equipment Supplier 8 (NIG),Equipment,Nigeria,Net 60,NGN,3.32,True,Low
+SUP1027,Equipment Supplier 9 (IND),Equipment,India,Net 45,USD,3.76,True,Medium
+SUP1028,Services Supplier 1 (CHI),Services,China,Net 30,USD,4.36,False,Medium
+SUP1029,Services Supplier 2 (NIG),Services,Nigeria,Net 60,NGN,3.68,True,Low
+SUP1030,Services Supplier 3 (CHI),Services,China,Net 45,USD,3.01,True,Medium
+SUP1031,Services Supplier 4 (NIG),Services,Nigeria,Net 60,NGN,4.52,True,Low
+SUP1032,Services Supplier 5 (NIG),Services,Nigeria,Net 60,NGN,3.6,True,Low
+SUP1033,Services Supplier 6 (UK),Services,UK,Net 30,USD,3.75,False,Low
+SUP1034,Services Supplier 7 (UK),Services,UK,Net 60,USD,3.65,False,Medium
+SUP1035,Services Supplier 8 (GER),Services,Germany,Net 45,USD,3.48,False,Low
+SUP1036,Services Supplier 9 (NIG),Services,Nigeria,Net 30,NGN,4.46,True,Low
+SUP1037,Services Supplier 10 (NIG),Services,Nigeria,Net 30,NGN,4.32,True,Low
+SUP1038,Services Supplier 11 (CHI),Services,China,Net 45,USD,4.06,True,Low
+SUP1039,Services Supplier 12 (IND),Services,India,Net 60,USD,4.51,True,Medium
