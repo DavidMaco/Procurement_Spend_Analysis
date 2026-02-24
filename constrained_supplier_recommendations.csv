@@ -1,0 +1,5 @@
+category,supplier_id,supplier_name,total_quantity,total_spend_ngn,avg_unit_cost_ngn,on_time_delivery_pct,quality_incident_count,total_quality_cost_ngn,total_orders,risk_level,risk_numeric,constrained_share,projected_quantity,projected_spend_ngn,historical_category_spend_ngn,dual_sourced
+Equipment,SUP1024,Equipment Supplier 6 (IND),36170.0,7752615218.28,214338.2698,38.81,2.0,54236184.43,75,High,2,1.0,338676.0,72591227862.7848,81673266558.03,0
+Packaging,SUP1017,Packaging Supplier 10 (IND),36686.0,9033833220.52,246247.4301,42.03,6.0,171980756.59,74,Low,0,1.0,311696.0,76754338972.4496,87448582882.05,0
+Raw Materials,SUP1001,Raw Materials Supplier 2 (UK),59763.0,11823594432.69,197841.3807,35.48,7.0,162309601.68,127,Low,0,1.0,306539.0,60646098998.3973,63948937705.15,0
+Services,SUP1038,Services Supplier 11 (CHI),34863.0,7794254777.88,223568.1031,43.06,1.0,103124391.04,77,Low,0,1.0,318328.0,71167987123.6168,77319688577.48,0

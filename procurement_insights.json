@@ -9,5 +9,19 @@
   "total_savings": 185923363343.19,
   "savings_percentage": 59.89982872706201,
   "optimization_savings": 15684138060.312317,
-  "optimization_savings_pct": 5.053034576461642
+  "optimization_savings_pct": 5.053034576461642,
+  "constrained_savings_ngn": 29230822765.461487,
+  "constrained_savings_pct": 9.417435472979877,
+  "constrained_dual_sourced_count": 0,
+  "total_savings_mean_ngn": 186370756555.67432,
+  "total_savings_median_ngn": 186456665183.08392,
+  "total_savings_std_ngn": 33617082355.40355,
+  "total_savings_p05_ngn": 131893057264.97336,
+  "total_savings_p25_ngn": 163498999073.9699,
+  "total_savings_p75_ngn": 209100629523.49893,
+  "total_savings_p95_ngn": 241584040254.04263,
+  "savings_pct_mean": 60.21334224344687,
+  "savings_pct_median": 60.04802997788411,
+  "savings_pct_p05": 42.33245803178191,
+  "savings_pct_p95": 78.76290815006135
 }

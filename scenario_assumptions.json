@@ -1,4 +1,40 @@
 {
+  "constraints": {
+    "standard": {
+      "max_single_supplier_share": 0.8,
+      "min_dual_source_threshold": 50000000000,
+      "min_on_time_delivery_pct": 70,
+      "max_quality_incidents_per_order": 5,
+      "max_risk_level": "High",
+      "min_price_percentile": 0.8
+    },
+    "conservative": {
+      "max_single_supplier_share": 0.65,
+      "min_dual_source_threshold": 30000000000,
+      "min_on_time_delivery_pct": 80,
+      "max_quality_incidents_per_order": 3,
+      "max_risk_level": "Medium",
+      "min_price_percentile": 0.9
+    },
+    "aggressive": {
+      "max_single_supplier_share": 0.9,
+      "min_dual_source_threshold": 100000000000,
+      "min_on_time_delivery_pct": 60,
+      "max_quality_incidents_per_order": 10,
+      "max_risk_level": "High",
+      "min_price_percentile": 0.7
+    }
+  },
+  "monte_carlo": {
+    "num_simulations": 10000,
+    "random_seed": 42,
+    "uncertainty_parameters": {
+      "price_standardization_sigma": 0.15,
+      "performance_improvement_sigma": 0.20,
+      "consolidation_sigma": 0.25,
+      "total_spend_sigma": 0.05
+    }
+  },
   "supplier_optimization": {
     "max_suppliers_per_category": 3,
     "min_supplier_share": 0.15,

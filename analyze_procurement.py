@@ -9,6 +9,8 @@ import json
 
 from optimization_engine import run_supplier_optimization
 from scenario_analysis import run_sensitivity_analysis
+from constrained_optimization import run_constrained_optimization
+from monte_carlo import run_monte_carlo_analysis, monte_carlo_to_dataframe
 
 def run_analysis():
     """Run comprehensive procurement analysis"""
@@ -27,7 +29,7 @@ def run_analysis():
     insights = {}
     
     # 1. Executive Summary
-    print("\n📊 EXECUTIVE SUMMARY")
+    print("\n[EXEC] EXECUTIVE SUMMARY")
     print("-" * 80)
     
     exec_summary = pd.read_sql('''
@@ -40,15 +42,15 @@ def run_analysis():
     ''', conn)
     
     total_spend = exec_summary['total_spend_ngn'].values[0]
-    print(f"Total Spend (2 years): ₦{total_spend:,.0f}")
+    print(f"Total Spend (2 years): NGN {total_spend:,.0f}")
     print(f"Total Orders: {exec_summary['total_orders'].values[0]:,}")
     print(f"Active Suppliers: {exec_summary['total_suppliers'].values[0]}")
-    print(f"Average Order Value: ₦{exec_summary['avg_order_value'].values[0]:,.0f}")
+    print(f"Average Order Value: NGN {exec_summary['avg_order_value'].values[0]:,.0f}")
     
     insights['total_spend'] = float(total_spend)
     
     # 2. Spend by Category (Pareto Analysis)
-    print("\n📈 SPEND BY CATEGORY (Pareto Analysis)")
+    print("\n[PARETO] SPEND BY CATEGORY (Pareto Analysis)")
     print("-" * 80)
     
     category_spend = pd.read_sql('''
@@ -64,7 +66,7 @@ def run_analysis():
     print(category_spend.to_string(index=False))
     
     # 3. Top Savings Opportunity: Price Standardization
-    print("\n💰 SAVINGS OPPORTUNITY #1: Price Standardization")
+    print("\n[SAVINGS1] Price Standardization")
     print("-" * 80)
     
     price_variance = pd.read_sql('''
@@ -86,14 +88,14 @@ def run_analysis():
     
     total_price_savings = price_variance['potential_savings'].sum()
     print(f"\nIdentified {len(price_variance)} items with significant price variance")
-    print(f"TOTAL POTENTIAL SAVINGS: ₦{total_price_savings:,.0f}\n")
+    print(f"TOTAL POTENTIAL SAVINGS: NGN {total_price_savings:,.0f}\n")
     print("Top 5 Opportunities:")
     print(price_variance[['material_name', 'overpayment_pct', 'potential_savings']].head().to_string(index=False))
     
     insights['price_standardization_savings'] = float(total_price_savings)
     
     # 4. Supplier Performance Issues
-    print("\n⚠️  SAVINGS OPPORTUNITY #2: Supplier Performance Improvement")
+    print("\n[ALERT] Supplier Performance Improvement")
     print("-" * 80)
     
     poor_performers = pd.read_sql('''
@@ -117,16 +119,16 @@ def run_analysis():
     total_performance_savings = quality_cost + delivery_cost
     
     print(f"\nIdentified {len(poor_performers)} underperforming suppliers")
-    print(f"Quality Cost Impact: ₦{quality_cost:,.0f}")
-    print(f"Estimated Late Delivery Cost: ₦{delivery_cost:,.0f}")
-    print(f"TOTAL POTENTIAL SAVINGS: ₦{total_performance_savings:,.0f}\n")
+    print(f"Quality Cost Impact: NGN {quality_cost:,.0f}")
+    print(f"Estimated Late Delivery Cost: NGN {delivery_cost:,.0f}")
+    print(f"TOTAL POTENTIAL SAVINGS: NGN {total_performance_savings:,.0f}\n")
     print("Top 5 Poor Performers:")
     print(poor_performers[['supplier_name', 'otd_pct', 'quality_incidents', 'total_spend']].head().to_string(index=False))
     
     insights['performance_improvement_savings'] = float(total_performance_savings)
     
     # 5. Supplier Consolidation Opportunity
-    print("\n🔄 SAVINGS OPPORTUNITY #3: Supplier Consolidation")
+    print("\n[CONSOLIDATE] Supplier Consolidation")
     print("-" * 80)
     
     fragmentation = pd.read_sql('''
@@ -145,13 +147,13 @@ def run_analysis():
     consolidation_savings = fragmentation['total_spend'].sum() * 0.06
     
     print(f"\n{len(fragmentation)} categories have high supplier fragmentation")
-    print(f"POTENTIAL SAVINGS (6% from consolidation): ₦{consolidation_savings:,.0f}\n")
+    print(f"POTENTIAL SAVINGS (6% from consolidation): NGN {consolidation_savings:,.0f}\n")
     print(fragmentation.to_string(index=False))
     
     insights['consolidation_savings'] = float(consolidation_savings)
     
     # 6. Maverick Buying
-    print("\n🚨 RISK ALERT: Maverick Buying (Non-Approved/High-Risk Suppliers)")
+    print("\n[RISK] Maverick Buying (Non-Approved/High-Risk Suppliers)")
     print("-" * 80)
     
     maverick = pd.read_sql('''
@@ -168,7 +170,7 @@ def run_analysis():
     ''', conn)
     
     maverick_spend = maverick['total_spend'].sum()
-    print(f"\nTotal Maverick Spend: ₦{maverick_spend:,.0f}")
+    print(f"\nTotal Maverick Spend: NGN {maverick_spend:,.0f}")
     print(f"({maverick_spend/total_spend*100:.2f}% of total procurement)\n")
     if len(maverick) > 0:
         print(maverick.head(10).to_string(index=False))
@@ -176,7 +178,7 @@ def run_analysis():
     insights['maverick_spend'] = float(maverick_spend)
     
     # 7. FX Risk
-    print("\n💱 FOREIGN EXCHANGE EXPOSURE")
+    print("\n[FX] FOREIGN EXCHANGE EXPOSURE")
     print("-" * 80)
     
     fx_exposure = pd.read_sql('''
@@ -194,7 +196,7 @@ def run_analysis():
         fx_volatility = (fx_exposure['max_fx_rate'].values[0] - fx_exposure['min_fx_rate'].values[0]) / fx_exposure['min_fx_rate'].values[0] * 100
         
         print(f"Total USD Spend: ${usd_spend:,.0f}")
-        print(f"FX Rate Range: ₦{fx_exposure['min_fx_rate'].values[0]:,.2f} - ₦{fx_exposure['max_fx_rate'].values[0]:,.2f}")
+        print(f"FX Rate Range: NGN {fx_exposure['min_fx_rate'].values[0]:,.2f} - NGN {fx_exposure['max_fx_rate'].values[0]:,.2f}")
         print(f"FX Volatility: {fx_volatility:.1f}%")
         
         insights['usd_spend'] = float(usd_spend)
@@ -202,7 +204,7 @@ def run_analysis():
     
     # 8. TOTAL SAVINGS SUMMARY
     print("\n" + "=" * 80)
-    print("💎 TOTAL IDENTIFIED SAVINGS OPPORTUNITIES")
+    print("[TOP] TOTAL IDENTIFIED SAVINGS OPPORTUNITIES")
     print("=" * 80)
     
     total_savings = total_price_savings + total_performance_savings + consolidation_savings
@@ -214,7 +216,7 @@ def run_analysis():
             'Supplier Consolidation',
             'TOTAL SAVINGS POTENTIAL'
         ],
-        'Potential Savings (₦)': [
+        'Potential Savings (NGN)': [
             f'{total_price_savings:,.0f}',
             f'{total_performance_savings:,.0f}',
             f'{consolidation_savings:,.0f}',
@@ -230,14 +232,14 @@ def run_analysis():
     
     print(savings_summary.to_string(index=False))
     
-    print(f"\n🎯 TARGET: Achieve ₦{total_savings:,.0f} in annual savings")
-    print(f"   This represents {total_savings/total_spend*100:.1f}% reduction in procurement costs")
+    print(f"\n[GOAL] TARGET: Achieve NGN {total_savings:,.0f} in annual savings")
+    print(f"       This represents {total_savings/total_spend*100:.1f}% reduction in procurement costs")
     
     insights['total_savings'] = float(total_savings)
     insights['savings_percentage'] = float(total_savings/total_spend*100)
 
     # 9. Decision Optimization (Supplier Allocation)
-    print("\n🧠 DECISION ENGINE: Supplier Allocation Optimization")
+    print("\n[PHASE1] PHASE 1 - SUPPLIER OPTIMIZATION")
     print("-" * 80)
 
     optimization_cfg = assumptions.get('supplier_optimization', {})
@@ -252,7 +254,7 @@ def run_analysis():
         optimization_df.to_csv('supplier_optimization_recommendations.csv', index=False)
         print(f"Recommended allocations generated: {len(optimization_df):,} rows")
         print(
-            f"Estimated optimization savings: ₦{optimization_summary['optimization_savings_ngn']:,.0f} "
+            f"Estimated optimization savings: NGN {optimization_summary['optimization_savings_ngn']:,.0f} "
             f"({optimization_summary['optimization_savings_pct']:.2f}% of historical spend baseline)"
         )
     else:
@@ -262,7 +264,7 @@ def run_analysis():
     insights['optimization_savings_pct'] = float(optimization_summary.get('optimization_savings_pct', 0.0))
 
     # 10. Sensitivity Analysis
-    print("\n📉 SENSITIVITY ANALYSIS: Conservative to Aggressive")
+    print("\n[SCENARIO] Sensitivity Analysis: Conservative to Aggressive")
     print("-" * 80)
 
     sensitivity_df = run_sensitivity_analysis(
@@ -272,12 +274,47 @@ def run_analysis():
     sensitivity_df.to_csv('savings_scenarios.csv', index=False)
     print(sensitivity_df.to_string(index=False))
     
+    # 11. Constrained Optimization (Phase 2)
+    print("\n[PHASE2] PHASE 2 - CONSTRAINED OPTIMIZATION: SLA-Enforced Allocation")
+    print("-" * 80)
+    constraints_cfg = assumptions.get('constraints', {}).get('standard', {})
+    constrained_recs_df, constrained_summary = run_constrained_optimization(
+        conn=conn,
+        constraints=constraints_cfg,
+    )
+    constrained_recs_df.to_csv('constrained_supplier_recommendations.csv', index=False)
+    print(f"Constrained savings: NGN {constrained_summary['constrained_savings_ngn']:.2f}B "
+          f"({constrained_summary['constrained_savings_pct']:.1f}% of spend)")
+    print(f"Dual-sourced categories: {constrained_summary['dual_sourced_categories']}")
+    
+    insights['constrained_savings_ngn'] = constrained_summary['constrained_savings_ngn']
+    insights['constrained_savings_pct'] = constrained_summary['constrained_savings_pct']
+    insights['constrained_dual_sourced_count'] = constrained_summary['dual_sourced_categories']
+    
+    # 12. Monte Carlo Uncertainty (Phase 2)
+    print("\n[PHASE2] PHASE 2 - MONTE CARLO UNCERTAINTY: 10,000 Simulation Runs")
+    print("-" * 80)
+    mc_cfg = assumptions.get('monte_carlo', {})
+    mc_results = run_monte_carlo_analysis(
+        base_insights=insights,
+        num_simulations=mc_cfg.get('num_simulations', 10000),
+        random_seed=mc_cfg.get('random_seed', 42),
+        uncertainty_params=mc_cfg.get('uncertainty_parameters', {}),
+    )
+    mc_df = monte_carlo_to_dataframe(mc_results)
+    mc_df.to_csv('monte_carlo_uncertainty_bounds.csv', index=False)
+    print(mc_df.to_string(index=False))
+    print(f"\nSavings confidence interval (NGN): "
+          f"[{mc_results['total_savings_p05_ngn']:,.0f}, {mc_results['total_savings_p95_ngn']:,.0f}]")
+    
+    insights.update(mc_results)
+    
     # Save insights to JSON
     with open('procurement_insights.json', 'w') as f:
         json.dump(insights, f, indent=2)
     
     print("\n" + "=" * 80)
-    print("✓ Analysis complete! Insights saved to procurement_insights.json")
+    print("[OK] Analysis complete! Insights saved to procurement_insights.json")
     print("=" * 80)
     
     conn.close()
