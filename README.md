@@ -260,9 +260,10 @@ These files define page-level dashboard structure, KPI definitions, and starter 
 ## Roadmap
 
 - Phase 3 complete: Power BI handoff pack and screenshot capture checklist
+- Phase 4 complete: integrity/regression tests and CI pipeline smoke validation
 - Add final dashboard screenshots and PBIX/TWB artifact
-- Expand test suite for data integrity and metric regression
-- Add CI workflow for pipeline validation
+- Expand coverage with SQL-level metric reconciliation tests
+- Add artifact publishing from CI (reports + charts)
 
 ## License
 
