@@ -261,9 +261,10 @@ These files define page-level dashboard structure, KPI definitions, and starter 
 
 - Phase 3 complete: Power BI handoff pack and screenshot capture checklist
 - Phase 4 complete: integrity/regression tests and CI pipeline smoke validation
+- Phase 5 complete: SQL metric reconciliation tests and CI artifact publishing
 - Add final dashboard screenshots and PBIX/TWB artifact
-- Expand coverage with SQL-level metric reconciliation tests
-- Add artifact publishing from CI (reports + charts)
+- Add SQL anomaly detection checks for trend breaks and missing data
+- Add scheduled nightly workflow for pipeline drift monitoring
 
 ## License
 
