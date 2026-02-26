@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      PYTHONUTF8: "1"
 
     steps:
       - name: Checkout
@@ -31,8 +33,16 @@ jobs:
           python create_db.py
           python analyze_procurement.py
 
+      - name: Validate generated files
+        run: |
+          test -f procurement.db
+          test -f procurement_insights.json
+          test -f supplier_optimization_recommendations.csv
+          test -f constrained_supplier_recommendations.csv
+          test -f monte_carlo_uncertainty_bounds.csv
+
       - name: Run tests
-        run: pytest -q
+        run: pytest tests -q
 
       - name: Upload pipeline artifacts
         if: always()
