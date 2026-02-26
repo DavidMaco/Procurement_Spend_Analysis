@@ -239,6 +239,17 @@ Screenshot placeholders are organized for recruiter-ready presentation:
 
 Guidance and naming conventions are documented in docs/screenshots/README.md.
 
+Phase 3 execution checklist is available at docs/screenshots/PHASE3_CAPTURE_CHECKLIST.md.
+
+## Power BI Handoff (Phase 3)
+
+Power BI build guidance and handoff assets are now included:
+
+- powerbi/PHASE3_POWERBI_HANDOFF.md
+- powerbi/DAX_MEASURES.md
+
+These files define page-level dashboard structure, KPI definitions, and starter DAX measures for portfolio presentation.
+
 ## Skills Demonstrated
 
 - Procurement analytics and strategic sourcing logic
@@ -248,9 +259,9 @@ Guidance and naming conventions are documented in docs/screenshots/README.md.
 
 ## Roadmap
 
-- Add dashboard screenshots and PBIX/TWB artifact
-- Parameterize scenario assumptions via config file
-- Add lightweight test suite for data integrity and metric regression
+- Phase 3 complete: Power BI handoff pack and screenshot capture checklist
+- Add final dashboard screenshots and PBIX/TWB artifact
+- Expand test suite for data integrity and metric regression
 - Add CI workflow for pipeline validation
 
 ## License
