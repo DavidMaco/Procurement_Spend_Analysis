@@ -33,3 +33,24 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+
+      - name: Upload pipeline artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: procurement-pipeline-artifacts
+          path: |
+            procurement_insights.json
+            procurement_insights_summary.csv
+            category_spend.csv
+            supplier_performance.csv
+            price_variance_top20.csv
+            monthly_spend_by_category.csv
+            supplier_optimization_recommendations.csv
+            constrained_supplier_recommendations.csv
+            savings_scenarios.csv
+            monte_carlo_uncertainty_bounds.csv
+            EXECUTIVE_REPORT.md
+            EXECUTIVE_REPORT_ONE_PAGE.html
+            EXECUTIVE_REPORT_ONE_PAGE.pdf
+          if-no-files-found: warn
