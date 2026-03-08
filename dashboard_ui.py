@@ -28,6 +28,57 @@ def configure_page(title: str, icon: str = DEFAULT_PAGE_ICON) -> None:
         layout="wide",
         initial_sidebar_state="expanded",
     )
+    st.markdown(
+        """
+        <style>
+        /* metric tiles */
+        [data-testid="metric-container"] {
+            background: var(--secondary-background-color);
+            border: 1px solid #E2E8F0;
+            border-radius: 10px;
+            padding: 1rem 1.25rem 0.75rem;
+        }
+        /* thinner horizontal rules */
+        hr { border: none; border-top: 1px solid #E2E8F0; margin: 0.25rem 0 1rem; }
+        /* tighten default heading margins */
+        h2 { margin-bottom: 0 !important; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def page_header(title: str, subtitle: str = "") -> None:
+    """Render a consistent styled page title and optional subtitle, then a divider."""
+    st.markdown(f"## {title}")
+    if subtitle:
+        st.markdown(
+            f'<p style="color:#64748B;font-size:0.95rem;margin-top:-0.4rem">{subtitle}</p>',
+            unsafe_allow_html=True,
+        )
+    st.divider()
+
+
+def apply_chart_theme(fig, height: int = 380) -> None:
+    """Apply a clean, minimal Plotly layout theme to *fig* in-place."""
+    fig.update_layout(
+        height=height,
+        margin=dict(l=0, r=0, t=36, b=0),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter, sans-serif", size=12, color="#0F172A"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            bgcolor="rgba(0,0,0,0)",
+        ),
+        hoverlabel=dict(bgcolor="#0F172A", font_color="#F8FAFC", bordercolor="#0F172A"),
+    )
+    fig.update_xaxes(gridcolor="#E2E8F0", gridwidth=1, zeroline=False, linecolor="#E2E8F0")
+    fig.update_yaxes(gridcolor="#E2E8F0", gridwidth=1, zeroline=False, linecolor="#E2E8F0")
 
 
 def format_currency(value: float, currency: str = "NGN") -> str:
