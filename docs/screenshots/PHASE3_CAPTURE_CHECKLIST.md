@@ -9,6 +9,15 @@ Use this checklist when exporting dashboard screenshots for portfolio publishing
 - `03-savings-opportunities.png`
 - `04-risk-analysis.png`
 
+## Optional Extended Files
+
+- `05-data-hub.png`
+- `powerbi-01-executive-overview.png`
+- `powerbi-02-supplier-performance.png`
+- `powerbi-03-savings-opportunities.png`
+- `powerbi-04-risk-uncertainty.png`
+- `powerbi-05-data-quality.png`
+
 ## Capture Rules
 
 - Resolution: 1920x1080 minimum
@@ -49,3 +58,5 @@ Use this checklist when exporting dashboard screenshots for portfolio publishing
 - [ ] Images saved under `docs/screenshots`
 - [ ] README links validated
 - [ ] Portfolio narrative updated
+- [ ] Multipage Streamlit capture guide reviewed
+- [ ] Power BI capture guide reviewed

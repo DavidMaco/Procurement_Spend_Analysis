@@ -6,6 +6,7 @@ Add production-quality dashboard screenshots to this folder using the file names
 2. 02-supplier-performance.png
 3. 03-savings-opportunities.png
 4. 04-risk-analysis.png
+5. 05-data-hub.png (optional)
 
 ## Capture Standards
 
@@ -40,3 +41,8 @@ Add production-quality dashboard screenshots to this folder using the file names
 - Maverick buying split and trend.
 - FX volatility trend.
 - High-risk suppliers summary.
+
+## Multipage capture help
+
+- Streamlit multipage guidance: [STREAMLIT_MULTIPAGE_CAPTURE_GUIDE.md](STREAMLIT_MULTIPAGE_CAPTURE_GUIDE.md)
+- Power BI export guidance: [POWERBI_CAPTURE_GUIDE.md](POWERBI_CAPTURE_GUIDE.md)
