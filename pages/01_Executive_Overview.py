@@ -60,6 +60,10 @@ with right:
         use_container_width=True,
         hide_index=True,
         height=340,
+        column_config={
+            "metric": st.column_config.TextColumn("Metric", width="medium"),
+            "Value":  st.column_config.TextColumn("Value",  width="small"),
+        },
     )
 
 st.divider()

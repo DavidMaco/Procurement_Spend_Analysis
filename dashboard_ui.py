@@ -42,6 +42,8 @@ def configure_page(title: str, icon: str = DEFAULT_PAGE_ICON) -> None:
         hr { border: none; border-top: 1px solid #E2E8F0; margin: 0.25rem 0 1rem; }
         /* tighten default heading margins */
         h2 { margin-bottom: 0 !important; }
+        /* hide Plotly chart modebar */
+        .js-plotly-plot .plotly .modebar-container { display: none !important; }
         </style>
         """,
         unsafe_allow_html=True,
