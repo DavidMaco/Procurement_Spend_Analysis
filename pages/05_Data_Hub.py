@@ -6,6 +6,7 @@ from dashboard_ui import (
     build_filtered_context,
     configure_page,
     ensure_dashboard_bundle,
+    page_header,
     powerbi_pack_download,
     schema_reference_table,
 )
@@ -18,31 +19,41 @@ context = build_filtered_context(bundle)
 metadata = context["metadata"]
 raw = context["raw"]
 
-st.title("Data Hub")
-st.caption("Upload readiness, normalized raw tables, schema reference, and Power BI handoff downloads.")
+page_header(
+    "Data Hub",
+    "Upload readiness diagnostics, schema reference, and Power BI export handoff.",
+)
 
-left, right = st.columns([1.0, 1.0])
+# ── quality report + schema reference ───────────────────────────────────
+left, right = st.columns(2, gap="large")
 with left:
-    st.subheader("Data quality report")
-    st.json(metadata.get("quality_report", {}))
+    st.markdown("##### Data quality report")
+    st.json(metadata.get("quality_report", {}), expanded=False)
     if metadata.get("rename_maps"):
         with st.expander("Detected column mappings"):
-            st.json(metadata["rename_maps"])
+            st.json(metadata["rename_maps"], expanded=False)
+
 with right:
-    st.subheader("Expected upload schemas")
+    st.markdown("##### Upload schema reference")
     schema_df = schema_reference_table()
     st.dataframe(schema_df, use_container_width=True, hide_index=True)
     st.download_button(
-        "Download schema reference CSV",
+        "⬇️  Download schema reference CSV",
         data=schema_df.to_csv(index=False),
         file_name="upload_schema_reference.csv",
         mime="text/csv",
         use_container_width=True,
     )
 
-st.subheader("Power BI handoff")
+st.divider()
+
+# ── Power BI export ─────────────────────────────────────────────────────────────
+st.markdown("##### Power BI deployment pack")
 powerbi_pack_download(bundle)
 
-with st.expander("Preview normalized raw tables"):
+st.divider()
+
+# ── raw table preview ────────────────────────────────────────────────────────
+with st.expander("Preview normalized raw tables", expanded=False):
     selected_table = st.selectbox("Table", list(raw.keys()))
     st.dataframe(raw[selected_table].head(200), use_container_width=True, hide_index=True)
