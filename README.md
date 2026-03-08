@@ -19,7 +19,8 @@ Production-style analytics case study showing how procurement data can be transf
 
 ## Why This Project Matters
 
-Procurement teams often have strong transactional records but weak decision intelligence. This project demonstrates an end-to-end approach to:
+Procurement teams often have strong transactional records but weak decision intelligence.
+This project demonstrates an end-to-end approach to:
 
 1. Generate realistic procurement transactions for FMCG operations.
 2. Build a query-optimized analytical data store.
@@ -103,10 +104,7 @@ The project addresses five decision domains:
 
 - SQLite analytical store with four base tables
 - Indexed columns for time, supplier, and category access paths
-- Reusable analytical views:
-    - vw_supplier_performance
-    - vw_category_spend
-    - vw_savings_opportunities
+- Reusable analytical views: `vw_supplier_performance`, `vw_category_spend`, `vw_savings_opportunities`
 
 ### 3) Analytics logic
 
@@ -124,7 +122,7 @@ The project addresses five decision domains:
 ## Results Snapshot
 
 | Metric | Value |
-|---|---:|
+| --- | ---: |
 | Total Spend | NGN 310,390,475,723 |
 | Price Standardization Savings | NGN 18,454,667,942 |
 | Supplier Performance Savings | NGN 167,468,695,401 |
@@ -164,6 +162,26 @@ python create_db.py
 python analyze_procurement.py
 ```
 
+### 3b) Launch the Streamlit dashboard
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The dashboard supports three modes:
+
+- bundled demo dataset for instant review
+- fresh realistic-data generation with configurable order volume and random seed
+- external company-data ingestion from CSV uploads with schema normalization
+
+Multipage views are also available in Streamlit under:
+
+- Executive Overview
+- Supplier Performance
+- Savings Opportunities
+- Risk and Uncertainty
+- Data Hub
+
 ### 4) Review outputs
 
 - procurement_insights.json
@@ -190,7 +208,9 @@ python -m pytest -q
 
 ### purchase_orders.csv
 
-- po_number, po_date, supplier_id, material_id, quantity, unit_price_ngn, total_amount_ngn, total_amount_usd, currency, expected_delivery_date, actual_delivery_date, delivery_status, payment_status, buyer, plant_location
+- po_number, po_date, supplier_id, material_id, quantity, unit_price_ngn, total_amount_ngn,
+  total_amount_usd, currency, expected_delivery_date, actual_delivery_date, delivery_status,
+  payment_status, buyer, plant_location
 
 ### quality_incidents.csv
 
@@ -228,6 +248,65 @@ Use these prepared files:
 - monthly_spend_by_category.csv
 - procurement_insights_summary.csv
 
+## Streamlit Cloud Deployment
+
+This repository is now ready for Streamlit Cloud deployment.
+
+### App entry point
+
+- `streamlit_app.py`
+
+### Why this deploys cleanly
+
+- all dependencies are listed in `requirements.txt`
+- the app can run entirely on bundled CSV data without database setup
+- realistic synthetic datasets can be generated on demand for demo refreshes
+- external company data can be uploaded as CSV extracts and normalized inside the app
+
+### Recommended Streamlit Cloud settings
+
+- Python version: 3.10+
+- Main file path: `streamlit_app.py`
+- No secrets required for demo mode
+
+Supporting deployment assets:
+
+- [docs/STREAMLIT_CLOUD_DEPLOYMENT.md](docs/STREAMLIT_CLOUD_DEPLOYMENT.md)
+- [runtime.txt](runtime.txt)
+- [.streamlit/config.toml](.streamlit/config.toml)
+
+### Company upload templates
+
+Starter CSV templates are provided in [templates/company_uploads](templates/company_uploads).
+The dashboard also exposes a one-click download for the full template pack.
+
+## Power BI Deployment
+
+Use the app's **Download Power BI deployment pack** action or run the local export helper:
+
+```bash
+python powerbi/export_powerbi_pack.py --mode demo --output procurement_powerbi_pack.zip
+```
+
+For external company extracts stored in a folder:
+
+```bash
+python powerbi/export_powerbi_pack.py --mode folder --input-dir ./company_extracts --output procurement_powerbi_pack.zip
+```
+
+The deployment pack includes:
+
+- curated analytics exports for report visuals
+- normalized raw datasets for auditability
+- data-quality diagnostics
+- DAX starter measures
+- Power BI theme file
+- field-mapping reference
+- `.pbit` starter specification JSON
+- page-by-page Power BI build sheet
+
+See [powerbi/POWERBI_DEPLOYMENT_GUIDE.md](powerbi/POWERBI_DEPLOYMENT_GUIDE.md) for the full flow.
+
 ## Dashboard Screenshots
 
 Screenshot placeholders are organized for recruiter-ready presentation:
@@ -241,6 +320,11 @@ Guidance and naming conventions are documented in docs/screenshots/README.md.
 
 Phase 3 execution checklist is available at docs/screenshots/PHASE3_CAPTURE_CHECKLIST.md.
 
+Additional capture guides:
+
+- [docs/screenshots/STREAMLIT_MULTIPAGE_CAPTURE_GUIDE.md](docs/screenshots/STREAMLIT_MULTIPAGE_CAPTURE_GUIDE.md)
+- [docs/screenshots/POWERBI_CAPTURE_GUIDE.md](docs/screenshots/POWERBI_CAPTURE_GUIDE.md)
+
 ## Power BI Handoff (Phase 3)
 
 Power BI build guidance and handoff assets are now included:
@@ -249,6 +333,11 @@ Power BI build guidance and handoff assets are now included:
 - powerbi/DAX_MEASURES.md
 
 These files define page-level dashboard structure, KPI definitions, and starter DAX measures for portfolio presentation.
+
+Additional Power BI build assets:
+
+- [powerbi/POWERBI_PBIT_STARTER_SPEC.json](powerbi/POWERBI_PBIT_STARTER_SPEC.json)
+- [powerbi/POWERBI_PAGE_BUILD_SHEET.md](powerbi/POWERBI_PAGE_BUILD_SHEET.md)
 
 ## Skills Demonstrated
 
@@ -272,6 +361,6 @@ For portfolio and educational use. Data is synthetically generated and does not 
 
 ## Contact
 
-- GitHub: https://github.com/DavidMaco
+- GitHub: <https://github.com/DavidMaco>
 
 If this project is useful, a star is appreciated.
