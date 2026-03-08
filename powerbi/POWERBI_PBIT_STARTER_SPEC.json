@@ -1,0 +1,113 @@
+{
+  "template_name": "Procurement Spend Intelligence Starter",
+  "version": "1.0.0",
+  "purpose": "Starter specification for building a .pbit template from the generated deployment pack.",
+  "theme_file": "powerbi_theme.json",
+  "source_exports": [
+    "exports/procurement_insights_summary.csv",
+    "exports/category_spend.csv",
+    "exports/supplier_performance.csv",
+    "exports/price_variance_top20.csv",
+    "exports/monthly_spend_by_category.csv",
+    "exports/supplier_optimization_recommendations.csv",
+    "exports/constrained_supplier_recommendations.csv",
+    "exports/savings_scenarios.csv",
+    "exports/monte_carlo_uncertainty_bounds.csv"
+  ],
+  "model": {
+    "dimensions": [
+      {
+        "name": "DimCategory",
+        "source": "category_spend",
+        "key": "category"
+      },
+      {
+        "name": "DimSupplier",
+        "source": "supplier_performance",
+        "key": "supplier_name"
+      },
+      {
+        "name": "DimScenario",
+        "source": "savings_scenarios",
+        "key": "scenario"
+      }
+    ],
+    "facts": [
+      {
+        "name": "FactMonthlySpend",
+        "source": "monthly_spend_by_category",
+        "grain": "month-category"
+      },
+      {
+        "name": "FactSavingsOpportunities",
+        "source": "price_variance_top20",
+        "grain": "material"
+      },
+      {
+        "name": "FactOptimization",
+        "source": "supplier_optimization_recommendations",
+        "grain": "category-supplier"
+      },
+      {
+        "name": "FactConstrainedOptimization",
+        "source": "constrained_supplier_recommendations",
+        "grain": "category-supplier"
+      }
+    ],
+    "relationships": [
+      ["DimCategory.category", "FactMonthlySpend.category"],
+      ["DimCategory.category", "FactSavingsOpportunities.category"],
+      ["DimCategory.category", "FactOptimization.category"],
+      ["DimCategory.category", "FactConstrainedOptimization.category"]
+    ]
+  },
+  "measures_source": "DAX_MEASURES.md",
+  "pages": [
+    {
+      "name": "Executive Overview",
+      "size": "16:9",
+      "visuals": [
+        "KPI cards",
+        "Category spend bar chart",
+        "Monthly trend line chart",
+        "Scenario comparison bar chart"
+      ]
+    },
+    {
+      "name": "Supplier Performance",
+      "size": "16:9",
+      "visuals": [
+        "Supplier score table",
+        "OTD vs quality scatter",
+        "Performance-grade distribution"
+      ]
+    },
+    {
+      "name": "Savings Opportunities",
+      "size": "16:9",
+      "visuals": [
+        "Price variance horizontal bar chart",
+        "Optimization recommendation table",
+        "Constrained sourcing table"
+      ]
+    },
+    {
+      "name": "Risk & Uncertainty",
+      "size": "16:9",
+      "visuals": [
+        "Maverick spend risk chart",
+        "FX KPI cards",
+        "Monte Carlo uncertainty table"
+      ]
+    },
+    {
+      "name": "Data Quality",
+      "size": "16:9",
+      "visuals": [
+        "Quality diagnostics table",
+        "Source metadata card",
+        "Refresh notes text box"
+      ]
+    }
+  ]
+}

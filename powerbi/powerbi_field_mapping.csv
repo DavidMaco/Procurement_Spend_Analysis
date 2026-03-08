@@ -1,0 +1,27 @@
+dataset,field,business_meaning,notes
+procurement_insights_summary,metric,KPI name,Use as slicer or lookup for summary cards
+procurement_insights_summary,value,KPI numeric value,Apply currency or percent formatting from unit
+procurement_insights_summary,unit,KPI unit,NGN USD or percent
+category_spend,category,Spend category,Primary executive dimension
+category_spend,total_spend_ngn,Total category spend,Use in executive bar charts
+category_spend,pct_of_total,Share of total spend,Use for Pareto labels
+supplier_performance,supplier_name,Supplier display name,Primary supplier reporting label
+supplier_performance,total_orders,Delivered order count,Useful for supplier segmentation
+supplier_performance,total_spend_ngn,Supplier spend baseline,Use in supplier rank tables
+supplier_performance,on_time_delivery_pct,On time delivery percentage,Core SLA metric
+supplier_performance,quality_incidents,Number of incident records,Use in risk views
+supplier_performance,total_quality_cost,Total quality-related cost impact,Use in savings and quality visuals
+supplier_performance,performance_grade,Derived supplier grade,Good for conditional formatting
+price_variance_top20,material_name,Material or item name,Main grain for savings opportunity ranking
+price_variance_top20,price_variance_pct,Observed price spread percent,Useful in bubble or bar charts
+price_variance_top20,potential_savings_ngn,Estimated standardization savings,Primary savings metric
+monthly_spend_by_category,month,Reporting month,Build date table if needed
+monthly_spend_by_category,total_spend_ngn,Monthly spend amount,Trend chart metric
+supplier_optimization_recommendations,recommended_share,Recommended unconstrained share,Use in sourcing mix visuals
+supplier_optimization_recommendations,projected_spend_ngn,Projected spend under optimized mix,Compare vs baseline
+constrained_supplier_recommendations,constrained_share,Constrained sourcing share,Show policy-compliant sourcing outcome
+constrained_supplier_recommendations,dual_sourced,Flag for dual sourcing,Use in resilience storytelling
+savings_scenarios,scenario,Scenario label,Conservative Base Aggressive
+savings_scenarios,total_savings_ngn,Scenario total savings,Use in scenario comparison chart
+monte_carlo_uncertainty_bounds,Statistic,Simulation statistic label,Use as uncertainty table row
+monte_carlo_uncertainty_bounds,Total Savings (NGN),Savings estimate by percentile,Card or table source
