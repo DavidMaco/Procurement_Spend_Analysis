@@ -3,13 +3,21 @@ FMCG Procurement Data Generator
 Generates realistic procurement data for portfolio project
 """
 
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
+import argparse
 import random
+from datetime import datetime, timedelta
+from pathlib import Path
 
-np.random.seed(42)
-random.seed(42)
+import numpy as np
+import pandas as pd
+
+
+def set_random_seed(seed: int = 42) -> None:
+    """Set deterministic seeds for reproducible synthetic procurement data."""
+
+    np.random.seed(seed)
+    random.seed(seed)
+
 
 def generate_suppliers():
     """Generate supplier master data"""
@@ -133,21 +141,70 @@ def generate_quality_incidents(pos_df, num=150):
         })
     return pd.DataFrame(incidents)
 
-if __name__ == "__main__":
-    print("Generating data...")
+
+def generate_dataset_bundle(
+    num_orders: int = 2500,
+    num_quality_incidents: int = 150,
+    seed: int = 42,
+):
+    """Generate a full in-memory dataset bundle for dashboards or exports."""
+
+    set_random_seed(seed)
     suppliers_df = generate_suppliers()
     materials_df = generate_materials()
-    pos_df = generate_purchase_orders(suppliers_df, materials_df, 2500)
-    incidents_df = generate_quality_incidents(pos_df)
-    
-    suppliers_df.to_csv('suppliers.csv', index=False)
-    materials_df.to_csv('materials.csv', index=False)
-    pos_df.to_csv('purchase_orders.csv', index=False)
-    incidents_df.to_csv('quality_incidents.csv', index=False)
-    
+    pos_df = generate_purchase_orders(suppliers_df, materials_df, num_orders)
+    incidents_df = generate_quality_incidents(pos_df, num_quality_incidents)
+
+    return {
+        'suppliers': suppliers_df,
+        'materials': materials_df,
+        'purchase_orders': pos_df,
+        'quality_incidents': incidents_df,
+    }
+
+
+def write_dataset_bundle(bundle, output_dir: str | Path = '.') -> Path:
+    """Persist a generated bundle to CSV files."""
+
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    bundle['suppliers'].to_csv(output_path / 'suppliers.csv', index=False)
+    bundle['materials'].to_csv(output_path / 'materials.csv', index=False)
+    bundle['purchase_orders'].to_csv(output_path / 'purchase_orders.csv', index=False)
+    bundle['quality_incidents'].to_csv(output_path / 'quality_incidents.csv', index=False)
+
+    return output_path
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Generate synthetic procurement data.')
+    parser.add_argument('--output-dir', default='.', help='Directory to write CSV files into.')
+    parser.add_argument('--num-orders', type=int, default=2500, help='Number of purchase orders to generate.')
+    parser.add_argument('--quality-incidents', type=int, default=150, help='Target number of quality incidents.')
+    parser.add_argument('--seed', type=int, default=42, help='Random seed for deterministic outputs.')
+    return parser.parse_args()
+
+if __name__ == "__main__":
+    args = parse_args()
+    set_random_seed(args.seed)
+    print("Generating data...")
+    bundle = generate_dataset_bundle(
+        num_orders=args.num_orders,
+        num_quality_incidents=args.quality_incidents,
+        seed=args.seed,
+    )
+    output_dir = write_dataset_bundle(bundle, args.output_dir)
+
+    suppliers_df = bundle['suppliers']
+    materials_df = bundle['materials']
+    pos_df = bundle['purchase_orders']
+    incidents_df = bundle['quality_incidents']
+
     print(f"\n✓ Generated:")
     print(f"  {len(suppliers_df)} suppliers")
     print(f"  {len(materials_df)} materials")
     print(f"  {len(pos_df)} purchase orders")
     print(f"  {len(incidents_df)} quality incidents")
     print(f"\nTotal Spend: ₦{pos_df['total_amount_ngn'].sum():,.0f}")
+    print(f"Output directory: {output_dir.resolve()}")
