@@ -81,8 +81,27 @@ def apply_chart_theme(fig, height: int = 380) -> None:
     fig.update_yaxes(gridcolor="#E2E8F0", gridwidth=1, zeroline=False, linecolor="#E2E8F0")
 
 
+def render_chart(fig, height: int = 380) -> None:
+    """Apply theme to *fig* and render it with the Plotly modebar hidden."""
+    apply_chart_theme(fig, height=height)
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
 def format_currency(value: float, currency: str = "NGN") -> str:
     symbol = "$" if currency == "USD" else "₦"
+    return f"{symbol}{value:,.0f}"
+
+
+def format_currency_abbr(value: float, currency: str = "NGN") -> str:
+    """Return a compact currency string with B/M/K suffix for metric cards."""
+    symbol = "$" if currency == "USD" else "₦"
+    abs_val = abs(value)
+    if abs_val >= 1_000_000_000:
+        return f"{symbol}{value / 1_000_000_000:.1f}B"
+    if abs_val >= 1_000_000:
+        return f"{symbol}{value / 1_000_000:.1f}M"
+    if abs_val >= 1_000:
+        return f"{symbol}{value / 1_000:.1f}K"
     return f"{symbol}{value:,.0f}"
 
 
@@ -211,10 +230,10 @@ def build_filtered_context(bundle: dict) -> dict:
 def metric_strip(context: dict) -> None:
     metrics = context["metrics"]
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Filtered spend", format_currency(metrics["filtered_total_spend"]))
-    col2.metric("Filtered suppliers", f"{metrics['filtered_supplier_count']:,}")
-    col3.metric("Price variance savings", format_currency(metrics["filtered_savings"]))
-    col4.metric("Maverick spend", format_currency(metrics["filtered_maverick_spend"]))
+    col1.metric("Total spend", format_currency_abbr(metrics["filtered_total_spend"]))
+    col2.metric("Suppliers", f"{metrics['filtered_supplier_count']:,}")
+    col3.metric("Savings opportunity", format_currency_abbr(metrics["filtered_savings"]))
+    col4.metric("Maverick spend", format_currency_abbr(metrics["filtered_maverick_spend"]))
 
 
 def powerbi_pack_download(bundle: dict) -> None:

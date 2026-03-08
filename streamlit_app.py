@@ -13,13 +13,13 @@ import streamlit as st
 
 from dashboard_ui import (
     PALETTE,
-    apply_chart_theme,
     build_filtered_context,
     configure_page,
     ensure_dashboard_bundle,
     format_currency,
     metric_strip,
     page_header,
+    render_chart,
 )
 
 
@@ -42,16 +42,16 @@ metric_strip(context)
 # ── page navigation ───────────────────────────────────────────────────────
 st.divider()
 nc1, nc2, nc3, nc4, nc5 = st.columns(5, gap="small")
-nc1.page_link("pages/01_Executive_Overview.py",    label="📊  Executive Overview")
-nc2.page_link("pages/02_Supplier_Performance.py",  label="🏭  Supplier Performance")
-nc3.page_link("pages/03_Savings_Opportunities.py", label="💰  Savings Opportunities")
-nc4.page_link("pages/04_Risk_and_Uncertainty.py",  label="⚠️  Risk & Uncertainty")
-nc5.page_link("pages/05_Data_Hub.py",              label="📂  Data Hub")
+nc1.page_link("pages/01_Executive_Overview.py",    label="📊 Executive")
+nc2.page_link("pages/02_Supplier_Performance.py",  label="🏭 Suppliers")
+nc3.page_link("pages/03_Savings_Opportunities.py", label="💰 Savings")
+nc4.page_link("pages/04_Risk_and_Uncertainty.py",  label="⚠️ Risk")
+nc5.page_link("pages/05_Data_Hub.py",              label="📂 Data Hub")
 
 st.divider()
 
 # ── spend by category + KPI summary ──────────────────────────────────────
-left, right = st.columns([1.45, 0.55], gap="large")
+left, right = st.columns([1.2, 0.8], gap="large")
 with left:
     st.markdown("##### Spend by category")
     fig = px.bar(
@@ -64,20 +64,19 @@ with left:
     )
     fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
     fig.update_layout(showlegend=False, yaxis_title="Spend (NGN)", xaxis_title="")
-    apply_chart_theme(fig, height=340)
-    st.plotly_chart(fig, use_container_width=True)
+    render_chart(fig, height=340)
 
 with right:
     st.markdown("##### KPI summary")
     summary_df = analytics["procurement_insights_summary"].copy()
-    summary_df["figure"] = summary_df.apply(
+    summary_df["Value"] = summary_df.apply(
         lambda row: format_currency(row["value"], row["unit"])
         if row["unit"] in {"NGN", "USD"}
         else f"{row['value']:.2f}%",
         axis=1,
     )
     st.dataframe(
-        summary_df[["metric", "figure"]],
+        summary_df[["metric", "Value"]],
         use_container_width=True,
         hide_index=True,
         height=340,
@@ -96,8 +95,7 @@ trend_fig = px.line(
     color_discrete_sequence=PALETTE,
 )
 trend_fig.update_layout(yaxis_title="Spend (NGN)", xaxis_title="")
-apply_chart_theme(trend_fig, height=300)
-st.plotly_chart(trend_fig, use_container_width=True)
+render_chart(trend_fig, height=300)
 
 st.divider()
 st.caption(

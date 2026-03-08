@@ -6,13 +6,13 @@ import streamlit as st
 
 from dashboard_ui import (
     PALETTE,
-    apply_chart_theme,
     build_filtered_context,
     configure_page,
     ensure_dashboard_bundle,
     format_currency,
     metric_strip,
     page_header,
+    render_chart,
 )
 
 
@@ -50,8 +50,7 @@ with left:
         color_discrete_sequence=PALETTE,
     )
     risk_fig.update_layout(xaxis_title="Spend (NGN)", yaxis_title="Risk level", showlegend=False)
-    apply_chart_theme(risk_fig, height=300)
-    st.plotly_chart(risk_fig, use_container_width=True)
+    render_chart(risk_fig, height=300)
 
 with right:
     st.markdown("##### Risk & FX KPIs")

@@ -5,12 +5,12 @@ import streamlit as st
 
 from dashboard_ui import (
     PALETTE,
-    apply_chart_theme,
     build_filtered_context,
     configure_page,
     ensure_dashboard_bundle,
     metric_strip,
     page_header,
+    render_chart,
 )
 
 
@@ -48,8 +48,7 @@ with right:
         color_discrete_sequence=PALETTE,
     )
     scatter.update_layout(xaxis_title="On-time delivery %", yaxis_title="Quality cost (NGN)")
-    apply_chart_theme(scatter, height=360)
-    st.plotly_chart(scatter, use_container_width=True)
+    render_chart(scatter, height=360)
 
 st.divider()
 
@@ -65,8 +64,7 @@ with bottom_left:
         color_discrete_sequence=PALETTE,
     )
     grade_fig.update_layout(xaxis_title="Grade", yaxis_title="Supplier count")
-    apply_chart_theme(grade_fig, height=300)
-    st.plotly_chart(grade_fig, use_container_width=True)
+    render_chart(grade_fig, height=300)
 
 with bottom_right:
     st.markdown("##### Top 15 suppliers by spend")
@@ -80,5 +78,4 @@ with bottom_right:
         color_discrete_sequence=PALETTE,
     )
     bar_fig.update_layout(yaxis_title="", xaxis_title="Spend (NGN)")
-    apply_chart_theme(bar_fig, height=300)
-    st.plotly_chart(bar_fig, use_container_width=True)
+    render_chart(bar_fig, height=300)

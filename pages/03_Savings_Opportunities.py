@@ -5,12 +5,12 @@ import streamlit as st
 
 from dashboard_ui import (
     PALETTE,
-    apply_chart_theme,
     build_filtered_context,
     configure_page,
     ensure_dashboard_bundle,
     metric_strip,
     page_header,
+    render_chart,
 )
 
 
@@ -39,8 +39,7 @@ with left:
         color_discrete_sequence=PALETTE,
     )
     variance_fig.update_layout(yaxis_title="", xaxis_title="Potential savings (NGN)")
-    apply_chart_theme(variance_fig, height=400)
-    st.plotly_chart(variance_fig, use_container_width=True)
+    render_chart(variance_fig, height=400)
 
 with right:
     st.markdown("##### Optimization recommendations")

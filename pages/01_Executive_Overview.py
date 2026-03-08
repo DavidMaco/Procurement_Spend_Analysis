@@ -5,7 +5,6 @@ import streamlit as st
 
 from dashboard_ui import (
     PALETTE,
-    apply_chart_theme,
     build_filtered_context,
     configure_page,
     ensure_dashboard_bundle,
@@ -13,6 +12,7 @@ from dashboard_ui import (
     metric_strip,
     page_header,
     powerbi_pack_download,
+    render_chart,
 )
 
 
@@ -44,20 +44,19 @@ with left:
     )
     fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
     fig.update_layout(showlegend=False, yaxis_title="Spend (NGN)", xaxis_title="")
-    apply_chart_theme(fig, height=340)
-    st.plotly_chart(fig, use_container_width=True)
+    render_chart(fig, height=340)
 
 with right:
     st.markdown("##### Core KPIs")
     summary_df = analytics["procurement_insights_summary"].copy()
-    summary_df["figure"] = summary_df.apply(
+    summary_df["Value"] = summary_df.apply(
         lambda row: format_currency(row["value"], row["unit"])
         if row["unit"] in {"NGN", "USD"}
         else f"{row['value']:.2f}%",
         axis=1,
     )
     st.dataframe(
-        summary_df[["metric", "figure"]],
+        summary_df[["metric", "Value"]],
         use_container_width=True,
         hide_index=True,
         height=340,
@@ -76,8 +75,7 @@ trend_fig = px.line(
     color_discrete_sequence=PALETTE,
 )
 trend_fig.update_layout(yaxis_title="Spend (NGN)", xaxis_title="")
-apply_chart_theme(trend_fig, height=300)
-st.plotly_chart(trend_fig, use_container_width=True)
+render_chart(trend_fig, height=300)
 
 st.divider()
 
@@ -93,8 +91,7 @@ scenario_fig = px.bar(
 )
 scenario_fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
 scenario_fig.update_layout(showlegend=False, yaxis_title="Savings (NGN)", xaxis_title="")
-apply_chart_theme(scenario_fig, height=280)
-st.plotly_chart(scenario_fig, use_container_width=True)
+render_chart(scenario_fig, height=280)
 
 m1, m2 = st.columns(2)
 m1.metric("Total savings potential", format_currency(float(insights.get("total_savings", 0.0))))
