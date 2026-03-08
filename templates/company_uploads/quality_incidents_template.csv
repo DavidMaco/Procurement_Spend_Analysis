@@ -1,0 +1,2 @@
+incident_id,po_number,supplier_id,incident_type,severity,cost_impact_ngn
+QI5001,PO300001,SUP1001,Quality Defect,Medium,250000

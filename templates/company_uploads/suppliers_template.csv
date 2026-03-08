@@ -1,0 +1,2 @@
+supplier_id,supplier_name,category,country,payment_terms,currency,quality_rating,is_approved,risk_level
+SUP1001,Acme Packaging Ltd,Packaging,Nigeria,Net 30,NGN,4.4,TRUE,Low

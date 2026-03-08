@@ -1,0 +1,2 @@
+po_number,po_date,supplier_id,supplier_name,material_id,material_name,category,quantity,unit_price_ngn,total_amount_ngn,total_amount_usd,currency,expected_delivery_date,actual_delivery_date,delivery_status,payment_status,buyer,plant_location
+PO300001,2025-01-15,SUP1001,Acme Packaging Ltd,MAT2001,500ml PET Bottle,Packaging,10000,1280,12800000,,NGN,2025-01-29,2025-01-28,Delivered,Paid,Jane Doe,Lagos
