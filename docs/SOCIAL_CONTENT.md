@@ -5,6 +5,237 @@ Each piece is written to stand alone and can be published directly.
 
 ---
 
+## LAUNCH POSTS (one per platform, publish first)
+
+---
+
+### LinkedIn — Launch
+
+I spent the last 5 years in procurement watching the same pattern repeat.
+
+The records are perfect. Every purchase order logged, every invoice filed, every supplier payment archived. And yet the moment someone asks a strategic question, the room goes quiet.
+
+"Are we paying the same price for this material across all our teams?"
+"Which suppliers are costing us more in delays than they're saving in unit price?"
+"How much of last year's spend went to vendors we never properly approved?"
+
+None of these are complicated questions. They are just impossible to answer without an analytical layer that looks across all the transactions at once. I built that layer.
+
+Procurement Spend Analysis is an end-to-end analytics pipeline built on a synthetic Nigerian FMCG dataset: 2,500 purchase orders, 40 suppliers, NGN 310 billion in spend over 24 months. It converts raw transaction records into a ranked, quantified action plan across five decision domains.
+
+Here is what the analysis found:
+
+NGN 18.5B in price standardisation savings. The same materials being bought from different suppliers at wildly different prices, with no structural reason for the gap. The cheapest available price for each material already existed in the data. Nobody was routing all orders to it.
+
+NGN 167.5B in supplier performance savings. A 58% late delivery rate across the supply base, generating cascading production delays and expedited freight costs that far exceeded any unit price savings those suppliers offered. The cheapest supplier on the invoice was rarely the cheapest supplier in total.
+
+NGN 40.6B (13% of total spend) in maverick buying risk. Over one in eight Naira spent on procurement bypassed the approved vendor list, carrying financial, quality, and governance exposure that does not appear on any invoice.
+
+USD 132M in foreign exchange exposure with 99.8% exchange rate volatility. A risk that lived quietly in the procurement portfolio while the exchange rate nearly doubled.
+
+Beyond the diagnostic, the project builds a 4-factor weighted supplier scoring model (cost 45%, delivery 30%, quality 15%, risk 10%) to recommend which suppliers should hold which share of the business going forward. Constrained optimisation applies hard eligibility rules on top of the scores. Scenario analysis models Conservative, Base, and Aggressive execution outcomes. Monte Carlo simulation runs 10,000 paths to produce honest confidence intervals for the savings range rather than a single number that pretends certainty it does not have.
+
+Everything surfaces in a 5-page Streamlit dashboard: spend visibility, supplier performance, savings opportunities, risk and FX exposure, and a full data hub.
+
+The core finding is not really about the numbers. It is about what procurement data is capable of when someone asks it the right questions.
+
+Live dashboard: https://procurementspendanalysis.streamlit.app/
+GitHub: https://github.com/DavidMaco/Procurement_Spend_Analysis
+
+#Procurement #DataAnalytics #SupplyChain #ProcurementAnalytics #Python #Streamlit #Nigeria #FMCG #CostOptimisation #SupplierManagement
+
+---
+
+### Medium — Launch Post
+
+**Title: I Analysed NGN 310 Billion in Procurement Spend. Here Is Everything I Found.**
+**Subtitle: An end-to-end analytics case study on where procurement money goes, what it costs when it goes wrong, and how to fix it.**
+
+---
+
+I have spent five years in procurement watching a particular kind of waste happen.
+
+Not the visible kind, where someone books a premium hotel when a budget option was available. The invisible kind, where money drains slowly and persistently through patterns that are only obvious when you look at the data from the outside.
+
+The same material bought from five different suppliers at four different prices, because no one compared them.
+
+A supplier who charges 8% less per unit but delivers 60% of orders late, costing far more in production disruption than the unit price saves.
+
+A procurement coordinator who places an urgent order with a local vendor because the approved supplier has a three-week lead time, and that pattern, repeated across dozens of people and hundreds of decisions, adds up to 13% of total spend flowing outside formal governance.
+
+An exchange rate that doubles during a two-year period, quietly inflating the Naira cost of USD 132 million in imports while everyone's attention is on supplier negotiations.
+
+None of this requires fraud or negligence. It emerges naturally from procurement operations that are well-run at the transaction level but have no analytical layer looking across all the transactions at once.
+
+Procurement Spend Analysis is that analytical layer, built as a portfolio case study.
+
+**The Dataset**
+
+The project uses synthetically generated data calibrated to reflect a realistic Nigerian FMCG procurement environment: 2,500 purchase orders, 40 suppliers across four categories (Raw Materials, Packaging, Equipment, Services), 71 materials, and 24 months of transactions totalling NGN 310.4 billion in spend.
+
+The synthetic generation process models realistic country and currency distributions for suppliers, price variance within defined bands around standard prices, realistic late delivery and quality incident rates, and exchange rate movement consistent with the NGN/USD environment in recent years. The resulting dataset is not identical to any real company's records, but the patterns it contains are representative of what a real procurement analytics engagement would surface.
+
+**The Architecture**
+
+The pipeline runs in five stages.
+
+Stage one generates and validates the raw data, producing four CSV files that mirror what any FMCG company would have in a real ERP environment: a supplier master, a materials catalogue, a purchase order transaction log, and a quality incident register.
+
+Stage two loads those files into a structured SQLite database and creates a supplier performance view that recalculates on every query. The view joins purchase orders and quality incidents to compute on-time delivery rates, quality incident counts, quality cost totals, and performance grades for every supplier.
+
+Stage three runs eight analytical routines against the database: Pareto spend analysis by category, price variance detection across multi-sourced materials, supplier performance and cost impact assessment, supplier consolidation opportunity sizing, maverick spend identification, and FX exposure quantification. Results are written to a JSON insights file and several CSV outputs.
+
+Stage four runs three optimisation engines. The weighted scoring model ranks each supplier on cost, delivery, quality, and risk and allocates volume shares proportionally to composite scores. The constrained optimisation layer adds hard eligibility rules: minimum delivery thresholds, risk caps, and dual-sourcing requirements for high-value categories. The scenario and Monte Carlo engines produce confidence-bounded savings estimates across Conservative, Base, and Aggressive execution scenarios using 10,000 simulation paths.
+
+Stage five surfaces everything in a five-page Streamlit dashboard and an executive HTML/PDF report.
+
+**The Findings**
+
+Price standardisation opportunity: NGN 18.5 billion.
+
+For every material purchased from more than one supplier, the analysis calculates the minimum price paid anywhere in the dataset and the average price paid. Where the gap exceeds 10%, the material is flagged and the recoverable saving is quantified. This analysis identified 10 materials with significant price variance and a combined standardisation opportunity of NGN 18.5 billion. These are materials where the best price already exists in the current supplier base. Capturing the saving requires either consolidating orders to the cheapest qualified supplier or renegotiating the full supply base down to the benchmark.
+
+Supplier performance opportunity: NGN 167.5 billion.
+
+This is the dominant savings lever and the most important finding in the analysis. Two cost components are calculated for each underperforming supplier: quality cost (measured directly from the incidents log) and delivery cost (estimated at 3% of spend with suppliers whose on-time delivery falls below 80% or whose quality incident count exceeds two). The 58.47% late delivery rate across the supply base drives this number to nearly nine times the price standardisation opportunity. A supplier who charges 8% less per unit but delivers half their orders late is not a cheap supplier. Total cost of ownership requires counting the operational disruption.
+
+Maverick spend: NGN 40.6 billion, 13.08% of total spend.
+
+Every purchase order is cross-referenced against the supplier master. Orders placed with suppliers who are either unapproved or rated High risk are classified as maverick. The ranked output identifies which vendors are receiving the most off-list spend, enabling three distinct responses: formally onboarding recurring vendors who would pass vetting, enforcing policy with internal audit involvement where spend is genuinely out of control, and redesigning the procurement process where employees bypass it because it is too slow for operational needs.
+
+FX exposure: USD 132 million with 99.84% exchange rate volatility.
+
+All USD-denominated purchase orders are isolated and the effective exchange rate at time of transaction is computed. The minimum and maximum rates observed across the 24-month window define the volatility band. A 99.84% volatility means the exchange rate roughly doubled during the analysis period. For a company with USD 132 million in annual import spend, this represents a potential doubling of the Naira cost of those imports with no change in supplier pricing. The FX analysis is the prerequisite for a hedging conversation. The conversation cannot happen if the exposure has not been measured.
+
+**The Optimisation Layer**
+
+The weighted scoring model addresses a more fundamental question than the diagnostic analysis: not "what went wrong?" but "who should we be buying from going forward?"
+
+Each supplier in each category receives a composite score:
+
+Cost score (45%): normalised from 0 to 1, where the cheapest supplier in the category scores 1.0 and the most expensive scores 0. This dimension carries the highest weight because cost efficiency is the primary mandate of procurement.
+
+Delivery score (30%): normalised on-time delivery percentage. High weight because delivery reliability generates hidden costs that often exceed unit price differences.
+
+Quality score (15%): normalised inverse of total quality cost. Lower financial impact from quality incidents scores higher.
+
+Risk score (10%): converted from Low/Medium/High labels to 1.0/0.6/0.2. Risk is treated as a floor condition rather than a primary differentiator, hence the lowest weight.
+
+The top-scoring suppliers in each category are selected as the recommended supply base. Volume shares are allocated proportionally to composite scores, with a 15% floor to ensure no selected supplier receives an allocation too small to sustain the commercial relationship.
+
+**The Uncertainty Layer**
+
+The savings estimates describe what is theoretically recoverable. Scenario analysis and Monte Carlo simulation describe what is realistically achievable across a range of execution conditions.
+
+The Conservative scenario applies multipliers of 0.70 (price), 0.65 (performance), and 0.60 (consolidation) to the base estimates. These reflect the friction of renegotiating existing contracts, the time required for supplier improvement plans to produce results, and partial adoption of new procurement policies.
+
+The Monte Carlo simulation runs 10,000 paths, drawing random values for each savings component from normal distributions centred on the base estimates with standard deviations of 15%, 20%, and 25% respectively. The output is a full percentile distribution: P5, P25, median, P75, P95.
+
+The median aligns closely with the base scenario. The P5 floor is the stress-test number: the savings level the organisation could still expect in 95% of plausible futures. The P95 ceiling is achievable only in the most favourable execution environment.
+
+This range is more honest than a single-point estimate. And the CFO who sees a P5-to-P95 range can build a budget, set contingencies, and size the transformation programme appropriately.
+
+**The Dashboard**
+
+The live Streamlit dashboard at procurementspendanalysis.streamlit.app presents all of this across five pages:
+
+Executive Overview: spend by category, monthly trend, scenario savings bar chart, and core KPI table.
+
+Supplier Performance: full scorecard table, OTD vs quality cost scatter chart, grade distribution, and top-15-by-spend ranking.
+
+Savings Opportunities: price variance bar chart ranked by NGN saving, optimisation recommendations by composite score, constrained sourcing plan, and scenario summary.
+
+Risk and Uncertainty: maverick spend by risk level, FX and Monte Carlo KPI tiles, and full Monte Carlo percentile table.
+
+Data Hub: raw data download, JSON insights viewer, and underlying data tables.
+
+All charts use sidebar filters for category and date range. All data is downloadable.
+
+**The Conclusion**
+
+The headline figure is NGN 186 billion in identified savings across the analytical period. The more important conclusion is what that figure represents.
+
+Most of it (NGN 167.5 billion) comes not from price negotiation but from supplier performance management. From redirecting business away from suppliers who are consistently disrupting operations, and toward suppliers who are already proving reliable in the same data.
+
+The information to make that redirection was always there. The transaction records, the delivery dates, the quality incident costs: all present, all archived, none of it being used to make a systematic case for change.
+
+This is the gap that procurement analytics closes. The receipts were always there. The analysis is what turns them into decisions.
+
+GitHub: https://github.com/DavidMaco/Procurement_Spend_Analysis
+Live: https://procurementspendanalysis.streamlit.app/
+
+---
+
+### X — Launch Thread
+
+**Tweet 1/7**
+I built a procurement analytics pipeline on a synthetic Nigerian FMCG dataset.
+
+NGN 310B in spend. 2,500 orders. 40 suppliers. 24 months.
+
+The question: what does the data know that the procurement team doesn't?
+
+Here's what I found. Thread.
+
+**Tweet 2/7**
+The data had 4 problems hiding in plain sight:
+
+1. Price inconsistency: same material, multiple suppliers, wildly different prices
+2. Performance costs: cheap suppliers generating expensive disruptions
+3. Maverick spend: 13% of spend bypassing the approved vendor list
+4. FX exposure: $132M in USD imports, exchange rate nearly doubled
+
+**Tweet 3/7**
+The numbers:
+
+Price standardisation: NGN 18.5B
+Supplier performance: NGN 167.5B
+Maverick spend exposure: NGN 40.6B (13%)
+Total savings opportunity: NGN 186B (60% of spend)
+
+58% late delivery rate. That's why performance savings = 9x price savings.
+
+**Tweet 4/7**
+The pipeline (5 stages):
+
+1. Raw data (suppliers, materials, POs, quality incidents)
+2. SQLite database + supplier performance view
+3. 8 analytical routines (spend, price, performance, FX, maverick)
+4. Weighted scoring model + constrained optimisation + Monte Carlo (10,000 paths)
+5. 5-page Streamlit dashboard + executive report
+
+**Tweet 5/7**
+The supplier scoring model:
+
+Cost: 45% (cheapest qualified option)
+Delivery: 30% (on-time delivery rate)
+Quality: 15% (financial impact of incidents)
+Risk: 10% (Low/Medium/High classification)
+
+Top scorers get selected. Volume shares are proportional to composite score.
+
+**Tweet 6/7**
+Monte Carlo output for savings planning:
+
+P5 = pessimistic floor (stress test)
+Median = central estimate (budget line)
+P95 = optimistic ceiling
+
+Because "you could save NGN 186B" is not a planning number.
+A confidence range built on 10,000 simulations is.
+
+**Tweet 7/7**
+The real finding: most of the savings come from fixing supplier performance, not price.
+
+The data to do that already existed. Nobody was looking at it systematically.
+
+Live dashboard: procurementspendanalysis.streamlit.app
+GitHub: github.com/DavidMaco/Procurement_Spend_Analysis
+
+---
+
+---
+
 ## Table of Contents
 
 - [Post 1: The Core Problem](#post-1-the-core-problem)
