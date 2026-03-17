@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import date
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -15,10 +17,18 @@ from dashboard_data import (
     prepare_dashboard_context,
     upload_schema_reference,
 )
+from procurement_spend_analysis.config import get_settings
+from procurement_spend_analysis.fmcg.access_control import (
+    Permission,
+    build_scoped_access_control,
+)
+from procurement_spend_analysis.fmcg.event_log import ActionTaken, EventLog, RecommendationEvent
+from procurement_spend_analysis.fmcg.variance_alerts import default_variance_engine
 
 
 PALETTE = ["#0F766E", "#2563EB", "#D97706", "#DC2626", "#7C3AED"]
 DEFAULT_PAGE_ICON = "📦"
+FMCG_ROLE_OPTIONS = ["viewer", "analyst", "approver", "admin"]
 
 
 def configure_page(title: str, icon: str = DEFAULT_PAGE_ICON) -> None:
@@ -59,6 +69,145 @@ def page_header(title: str, subtitle: str = "") -> None:
             unsafe_allow_html=True,
         )
     st.divider()
+
+
+def require_fmcg_dashboard_access(
+    permission: Permission,
+    *,
+    key_prefix: str,
+) -> dict[str, list[str] | str]:
+    """Manage a shared demo session and enforce the required FMCG permission."""
+    st.sidebar.markdown("##### Access")
+
+    stored_user_id = st.session_state.get("fmcg_user_id", "demo-user")
+    stored_roles = list(st.session_state.get("fmcg_roles", ["viewer"]))
+    default_role = stored_roles[0] if stored_roles and stored_roles[0] in FMCG_ROLE_OPTIONS else "viewer"
+
+    selected_role = st.sidebar.selectbox(
+        "Role",
+        options=FMCG_ROLE_OPTIONS,
+        index=FMCG_ROLE_OPTIONS.index(default_role),
+        key=f"{key_prefix}_role_selector",
+    )
+    user_id = st.sidebar.text_input(
+        "User ID",
+        value=stored_user_id,
+        key=f"{key_prefix}_user_id",
+    ).strip() or "demo-user"
+
+    if st.sidebar.button("Apply access", key=f"{key_prefix}_apply_access"):
+        st.session_state["fmcg_user_id"] = user_id
+        st.session_state["fmcg_roles"] = [selected_role]
+
+    if "fmcg_user_id" not in st.session_state:
+        st.session_state["fmcg_user_id"] = user_id
+    if "fmcg_roles" not in st.session_state:
+        st.session_state["fmcg_roles"] = [selected_role]
+
+    principal = {
+        "user_id": st.session_state["fmcg_user_id"],
+        "roles": list(st.session_state["fmcg_roles"]),
+    }
+    access = build_scoped_access_control(principal["user_id"], principal["roles"])
+    try:
+        access.require_permission(principal["user_id"], permission)
+    except (KeyError, PermissionError) as exc:
+        st.error(str(exc))
+        st.stop()
+
+    st.sidebar.caption(
+        f"Signed in as {principal['user_id']} ({', '.join(principal['roles'])})"
+    )
+    return principal
+
+
+def fmcg_user_has_permission(principal: dict[str, list[str] | str], permission: Permission) -> bool:
+    """Return whether the current dashboard principal holds a permission."""
+    access = build_scoped_access_control(
+        str(principal["user_id"]),
+        [str(role) for role in principal["roles"]],
+    )
+    return access.check_permission(str(principal["user_id"]), permission)
+
+
+def get_fmcg_event_log() -> EventLog:
+    """Return a session-scoped in-memory event log for dashboard actions."""
+    if "fmcg_event_log" not in st.session_state:
+        settings = get_settings()
+        st.session_state["fmcg_event_log"] = EventLog(settings.fmcg_event_log_path)
+    return st.session_state["fmcg_event_log"]
+
+
+def evaluate_fmcg_alerts(
+    baseline_df: pd.DataFrame,
+    current_df: pd.DataFrame,
+    *,
+    category: str | None = None,
+) -> pd.DataFrame:
+    """Evaluate default FMCG variance alerts and return them as a DataFrame."""
+    engine = default_variance_engine()
+    alerts = engine.evaluate(baseline_df, current_df)
+    rows = [asdict(alert) for alert in alerts]
+    df = pd.DataFrame(rows)
+    if df.empty:
+        return df
+    if category is not None:
+        df = df[df["category"] == category].reset_index(drop=True)
+    return df.sort_values(["severity", "variance_pct"], ascending=[True, False]).reset_index(drop=True)
+
+
+def log_fmcg_recommendation(
+    *,
+    principal: dict[str, list[str] | str],
+    model_id: str,
+    model_version: str,
+    input_snapshot_ref: str,
+    recommendation_type: str,
+    recommendation_payload: dict[str, Any],
+    confidence_score: float,
+) -> RecommendationEvent:
+    """Record a recommendation in the session-scoped event log."""
+    event = RecommendationEvent(
+        model_id=model_id,
+        model_version=model_version,
+        input_snapshot_ref=input_snapshot_ref,
+        recommendation_type=recommendation_type,
+        recommendation_payload={
+            **recommendation_payload,
+            "requested_by": str(principal["user_id"]),
+        },
+        confidence_score=confidence_score,
+    )
+    get_fmcg_event_log().record(event)
+    return event
+
+
+def resolve_fmcg_recommendation(
+    *,
+    principal: dict[str, list[str] | str],
+    event_id: str,
+    action: ActionTaken,
+) -> RecommendationEvent:
+    """Approve or reject a recommendation from the dashboard."""
+    log = get_fmcg_event_log()
+    approver_id = str(principal["user_id"])
+    if action == ActionTaken.APPROVED:
+        return log.approve(event_id, approver_id)
+    if action == ActionTaken.REJECTED:
+        return log.reject(event_id, approver_id)
+    raise ValueError(f"Unsupported action: {action.value}")
+
+
+def recommendation_history_df(recommendation_type: str | None = None) -> pd.DataFrame:
+    """Return recommendation history as a DataFrame for dashboard rendering."""
+    events = get_fmcg_event_log().query(recommendation_type=recommendation_type, limit=200)
+    rows = [event.model_dump() for event in events]
+    return pd.DataFrame(rows)
+
+
+def fmcg_recommendation_stats() -> dict[str, Any]:
+    """Return operational stats for the shared dashboard recommendation ledger."""
+    return get_fmcg_event_log().stats()
 
 
 def apply_chart_theme(fig, height: int = 380) -> None:

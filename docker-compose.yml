@@ -1,0 +1,26 @@
+# FMCG OS services (fmcg-api, fmcg-worker, etc.) will be added in Milestone 2.
+services:
+  api:
+    build: .
+    image: procurement-spend-analysis:local
+    command: uvicorn procurement_spend_analysis.api.app:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      PROCUREMENT_ALLOW_ORIGINS: '["http://localhost:8501","http://localhost:8000"]'
+      PROCUREMENT_LOG_LEVEL: INFO
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  dashboard:
+    build: .
+    image: procurement-spend-analysis:local
+    command: streamlit run streamlit_app.py --server.address=0.0.0.0 --server.port=8501
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy

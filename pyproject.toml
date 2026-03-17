@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=80", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "procurement-spend-analysis"
+version = "0.1.0"
+description = "Productionized procurement spend analytics with validation, optimization, ML, API, and observability."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Portfolio Use"}
+authors = [
+  {name = "David Igbonaju", email = "davidigbonaju@gmail.com"}
+]
+dependencies = [
+  "fastapi>=0.115,<1.0",
+  "uvicorn[standard]>=0.34,<1.0",
+  "pandas>=2.2,<3.0",
+  "numpy>=1.26,<3.0",
+  "scipy>=1.13,<2.0",
+  "scikit-learn>=1.5,<2.0",
+  "streamlit>=1.43,<2.0",
+  "plotly>=5.24,<7.0",
+  "reportlab>=4.0,<5.0",
+  "pydantic>=2.9,<3.0",
+  "pydantic-settings>=2.6,<3.0",
+  "pandera[pandas]>=0.22,<1.0",
+  "python-multipart>=0.0.12,<1.0",
+  "prometheus-client>=0.21,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9.0",
+  "pytest-cov>=6.0,<7.0",
+  "hypothesis>=6.124,<7.0",
+  "httpx>=0.28,<1.0",
+  "build>=1.2,<2.0",
+  "twine>=6.1,<7.0",
+]
+
+[project.scripts]
+procurement-api = "procurement_spend_analysis.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = [
+  "dashboard_data",
+  "generate_data",
+  "create_db",
+  "analyze_procurement",
+  "optimization_engine",
+  "constrained_optimization",
+  "scenario_analysis",
+  "monte_carlo",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "--cov=src/procurement_spend_analysis --cov=dashboard_data --cov=optimization_engine --cov=constrained_optimization --cov-report=term-missing --cov-report=xml --cov-fail-under=80"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/procurement_spend_analysis", "dashboard_data", "optimization_engine", "constrained_optimization"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

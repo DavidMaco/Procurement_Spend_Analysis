@@ -19,8 +19,10 @@ dist/
 
 # Test and coverage
 .pytest_cache/
+.hypothesis/
 .coverage
 .coverage.*
+coverage.xml
 htmlcov/
 .mypy_cache/
 .ruff_cache/
@@ -37,6 +39,7 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
 
 # Jupyter
 .ipynb_checkpoints/

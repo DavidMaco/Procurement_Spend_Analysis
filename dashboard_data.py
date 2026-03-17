@@ -25,18 +25,24 @@ from pathlib import Path
 from typing import Mapping
 
 import pandas as pd
+import pandera.errors
 
 from constrained_optimization import run_constrained_optimization
 from generate_data import generate_dataset_bundle
 from monte_carlo import monte_carlo_to_dataframe, run_monte_carlo_analysis
 from optimization_engine import run_supplier_optimization
+from procurement_spend_analysis.config import get_settings
+from procurement_spend_analysis.ml.models import detect_procurement_anomalies, forecast_category_demand
+from procurement_spend_analysis.security import sanitize_filename, validate_text_payload
+from procurement_spend_analysis.validation import validate_canonical_tables
 from scenario_analysis import run_sensitivity_analysis
 
 logger = logging.getLogger(__name__)
 
 # ── safety limits for CSV uploads ───────────────────────────────────────
-MAX_UPLOAD_FILE_SIZE_MB = 50
-MAX_UPLOAD_ROWS_PER_FILE = 500_000
+_SETTINGS = get_settings()
+MAX_UPLOAD_FILE_SIZE_MB = _SETTINGS.max_upload_file_size_mb
+MAX_UPLOAD_ROWS_PER_FILE = _SETTINGS.max_upload_rows_per_file
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -388,6 +394,10 @@ def normalize_raw_tables(raw_tables: Mapping[str, pd.DataFrame]) -> tuple[dict[s
 
     normalized_tables["purchase_orders"] = purchase_orders
     normalized_tables["quality_incidents"] = quality_incidents
+    try:
+        normalized_tables = validate_canonical_tables(normalized_tables)
+    except pandera.errors.SchemaErrors as exc:
+        raise UploadValidationError(f"Schema validation failed: {exc.failure_cases.head(10).to_dict(orient='records')}") from exc
     return normalized_tables, rename_maps
 
 
@@ -607,6 +617,8 @@ def _build_analytics(normalized_tables: Mapping[str, pd.DataFrame], source_label
         uncertainty_params=assumptions["monte_carlo"].get("uncertainty_parameters", {}),
     )
     mc_df = monte_carlo_to_dataframe(mc_results)
+    demand_forecast = forecast_category_demand(purchase_orders)
+    po_anomalies = detect_procurement_anomalies(purchase_orders)
 
     insights.update(optimization_summary)
     insights.update(constrained_summary)
@@ -647,6 +659,8 @@ def _build_analytics(normalized_tables: Mapping[str, pd.DataFrame], source_label
             "constrained_supplier_recommendations": constrained_df,
             "savings_scenarios": sensitivity_df,
             "monte_carlo_uncertainty_bounds": mc_df,
+            "demand_forecast": demand_forecast,
+            "purchase_order_anomalies": po_anomalies,
         },
         "insights": insights,
         "metadata": {
@@ -699,7 +713,9 @@ def build_bundle_from_upload_bytes(
     """
     raw_tables: dict[str, pd.DataFrame] = {}
     for filename, payload in uploaded_files.items():
+        filename = sanitize_filename(filename)
         _validate_upload_size(payload, filename)
+        validate_text_payload(payload.decode("utf-8", errors="ignore"), max_chars=MAX_UPLOAD_FILE_SIZE_MB * 1024 * 1024)
         dataset_key = infer_dataset_key(filename)
         if dataset_key is None:
             logger.warning("Skipping unrecognised upload: %s", filename)

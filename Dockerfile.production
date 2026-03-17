@@ -1,0 +1,68 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Procurement Intelligence SaaS — Production Multi-Stage Dockerfile
+# ═══════════════════════════════════════════════════════════════════════════
+# Stage 1: Build (install deps with binary compilation)
+# Stage 2: Runtime (minimal image, non-root user)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ── Stage 1: Builder ──────────────────────────────────────────────────────
+FROM python:3.13-slim AS builder
+
+WORKDIR /build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml requirements.txt ./
+RUN pip install --prefix=/install --no-cache-dir -r requirements.txt
+
+COPY src/ src/
+RUN pip install --prefix=/install --no-cache-dir --no-deps .
+
+# ── Stage 2: Runtime ─────────────────────────────────────────────────────
+FROM python:3.13-slim AS runtime
+
+# Security: non-root user
+RUN groupadd -r app && useradd -r -g app -d /app -s /sbin/nologin app
+
+# System deps for PostgreSQL client + healthcheck
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libpq5 curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /install /usr/local
+
+WORKDIR /app
+
+# Copy application code
+COPY src/ src/
+COPY scripts/ scripts/
+
+# Ownership
+RUN chown -R app:app /app
+
+USER app
+
+# Environment
+ENV PROCUREMENT_ENVIRONMENT=production \
+    PROCUREMENT_LOG_LEVEL=INFO \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Gunicorn with Uvicorn workers for production concurrency
+CMD ["python", "-m", "gunicorn", \
+     "procurement_spend_analysis.api.app:app", \
+     "--bind", "0.0.0.0:8000", \
+     "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--timeout", "120", \
+     "--graceful-timeout", "30", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

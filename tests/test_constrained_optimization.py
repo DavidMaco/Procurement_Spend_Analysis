@@ -126,3 +126,27 @@ def test_constrained_optimization_dual_source_summary_key_present():
     assert isinstance(summary["dual_sourced_categories"], int)
 
     conn.close()
+
+
+def test_constrained_optimization_single_eligible_supplier_falls_back_safely():
+    conn = _build_test_conn()
+
+    constraints = {
+        "min_on_time_delivery_pct": 95.0,
+        "max_quality_incidents_per_order": 0.0,
+        "max_risk_level": "Low",
+        "min_dual_source_threshold": 1000.0,
+        "min_price_percentile": 0.0,
+        "max_single_supplier_share": 0.80,
+    }
+
+    recs, summary = run_constrained_optimization(conn=conn, constraints=constraints)
+
+    assert not recs.empty
+    packaging = recs[recs["category"] == "Packaging"].copy()
+    assert packaging["supplier_id"].tolist() == ["SUP1"]
+    assert packaging["constrained_share"].tolist() == [1.0]
+    assert packaging["dual_sourced"].tolist() == [0]
+    assert summary["constrained_spend_ngn"] > 0
+
+    conn.close()

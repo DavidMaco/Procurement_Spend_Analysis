@@ -19,6 +19,7 @@ from dashboard_data import (
     normalize_raw_tables,
     prepare_dashboard_context,
 )
+from procurement_spend_analysis.config import get_settings
 
 
 def test_generate_demo_bundle_produces_expected_tables():
@@ -193,6 +194,13 @@ def test_validate_upload_size_rejects_oversized_file():
     fake_payload = b"x" * (MAX_UPLOAD_FILE_SIZE_MB * 1024 * 1024 + 1)
     with pytest.raises(UploadValidationError, match="exceeds"):
         _validate_upload_size(fake_payload, "huge_file.csv")
+
+
+def test_dashboard_upload_limits_match_shared_settings():
+    settings = get_settings()
+
+    assert MAX_UPLOAD_FILE_SIZE_MB == settings.max_upload_file_size_mb
+    assert MAX_UPLOAD_ROWS_PER_FILE == settings.max_upload_rows_per_file
 
 
 def test_grade_supplier_performance_returns_expected_grades():
