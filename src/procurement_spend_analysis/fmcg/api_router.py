@@ -20,7 +20,7 @@ from procurement_spend_analysis.fmcg.features import default_feature_store
 from procurement_spend_analysis.fmcg.kpi_catalog import default_kpi_catalog
 from procurement_spend_analysis.fmcg.metrics import default_metrics_layer
 from procurement_spend_analysis.fmcg.models import validate_fmcg_dataframe
-from procurement_spend_analysis.fmcg.pilot import PilotCohort, PilotConfig, select_pilot_cohort
+from procurement_spend_analysis.fmcg.pilot import PilotCohort, select_pilot_cohort
 from procurement_spend_analysis.fmcg.reconciliation import ReconciliationSuite, default_reconciliation_suite
 from procurement_spend_analysis.fmcg.variance_alerts import default_variance_engine
 

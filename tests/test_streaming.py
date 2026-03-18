@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
 
-import pytest
 
 from procurement_spend_analysis.streaming import (
     EventBus,

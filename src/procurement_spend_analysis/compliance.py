@@ -4,7 +4,7 @@ Provides:
 - AuditLogger: immutable, structured security audit trail
 - DataClassification: tagging + masking of PII / sensitive fields
 - GDPRService: data subject access requests (DSAR), right-to-erasure
-- EncryptionService: AES-256-GCM envelope encryption for data-at-rest
+- EncryptionService: AES-256-GCM encryption for sensitive application payloads
 - ComplianceChecker: automated SOC 2 control evidence collection
 """
 
@@ -12,16 +12,17 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import hmac
 import json
 import os
 import re
-import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
+
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -256,15 +257,16 @@ class GDPRService:
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Encryption Service (AES-256-GCM envelope encryption)
+# Encryption Service (AES-256-GCM)
 # ═══════════════════════════════════════════════════════════════════════════
 
 
 class EncryptionService:
-    """AES-256-GCM envelope encryption for data at rest.
+    """AES-256-GCM encryption for sensitive application data.
 
-    Each encrypt call generates a unique nonce. The master key should
-    be sourced from AWS KMS / Secrets Manager in production.
+    Each encrypt call generates a unique nonce and binds the supplied
+    context as associated authenticated data. The master key should be
+    sourced from a secret manager in production.
     """
 
     def __init__(self, master_key: bytes | None = None) -> None:
@@ -279,33 +281,25 @@ class EncryptionService:
         )
 
     def encrypt(self, plaintext: str, context: str = "default") -> str:
-        """Encrypt plaintext; returns base64-encoded ciphertext with nonce prefix."""
+        """Encrypt plaintext and return base64-encoded nonce+ciphertext."""
         key = self._derive_key(context)
         nonce = os.urandom(12)
-        # Use HMAC-based stream cipher as portable fallback
-        # (In production, use AES-256-GCM via cryptography library)
-        mac = hmac.new(key, nonce + plaintext.encode(), hashlib.sha256).digest()
-        # XOR cipher stream — demonstrative; production uses AES-GCM
-        key_stream = hashlib.sha256(key + nonce).digest()
-        plainbytes = plaintext.encode()
-        encrypted = bytes(b ^ key_stream[i % 32] for i, b in enumerate(plainbytes))
-        blob = nonce + mac + encrypted
+        encrypted = AESGCM(key).encrypt(nonce, plaintext.encode(), context.encode())
+        blob = nonce + encrypted
         return base64.urlsafe_b64encode(blob).decode()
 
     def decrypt(self, ciphertext: str, context: str = "default") -> str:
         """Decrypt base64-encoded ciphertext."""
         key = self._derive_key(context)
-        blob = base64.urlsafe_b64decode(ciphertext.encode())
+        try:
+            blob = base64.urlsafe_b64decode(ciphertext.encode())
+        except Exception as exc:  # pragma: no cover - defensive guard
+            raise ValueError("Decryption failed: invalid ciphertext encoding") from exc
         nonce = blob[:12]
-        stored_mac = blob[12:44]
-        encrypted = blob[44:]
-        # Reverse XOR
-        key_stream = hashlib.sha256(key + nonce).digest()
-        plainbytes = bytes(b ^ key_stream[i % 32] for i, b in enumerate(encrypted))
-        plaintext = plainbytes.decode()
-        # Verify MAC
-        expected_mac = hmac.new(key, nonce + plaintext.encode(), hashlib.sha256).digest()
-        if not hmac.compare_digest(stored_mac, expected_mac):
+        encrypted = blob[12:]
+        try:
+            plaintext = AESGCM(key).decrypt(nonce, encrypted, context.encode()).decode()
+        except (InvalidTag, ValueError, UnicodeDecodeError):
             raise ValueError("Decryption failed: integrity check failed")
         return plaintext
 
@@ -366,7 +360,7 @@ class ComplianceChecker:
                 ctrl.evidence = "API keys stored as SHA-256 hashes; raw keys never persisted"
             elif ctrl.control_id == "CC6.1":
                 ctrl.status = "compliant"
-                ctrl.evidence = "AES-256-GCM envelope encryption; AWS KMS for key wrapping"
+                ctrl.evidence = "AES-256-GCM encryption available for sensitive application payloads"
             elif ctrl.control_id == "CC6.2":
                 ctrl.status = "compliant"
                 ctrl.evidence = "TLS 1.3 enforced via ALB policy ELBSecurityPolicy-TLS13"

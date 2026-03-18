@@ -8,11 +8,22 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from procurement_spend_analysis.fmcg.access_control import (
+    AccessControlService,
+    Permission,
+    Role,
+    User,
+)
+from procurement_spend_analysis.fmcg.event_log import (
+    ActionTaken,
+    EventLog,
+    RecommendationEvent,
+)
+
 # ---------------------------------------------------------------------------
 # Variance Alerts
 # ---------------------------------------------------------------------------
 from procurement_spend_analysis.fmcg.variance_alerts import (
-    Alert,
     AlertCategory,
     AlertSeverity,
     VarianceAlertEngine,
@@ -151,11 +162,6 @@ class TestVarianceAlerts:
 # ---------------------------------------------------------------------------
 # Event Log
 # ---------------------------------------------------------------------------
-from procurement_spend_analysis.fmcg.event_log import (
-    ActionTaken,
-    EventLog,
-    RecommendationEvent,
-)
 
 
 class TestEventLog:
@@ -295,11 +301,34 @@ class TestEventLog:
         assert stats["decision_events"] == 1
         assert stats["action_counts"]["approved"] == 1
         assert stats["recommendation_types"]["supplier_negotiation"] == 2
+        assert stats["integrity_verified"] is True
+        assert len(stats["chain_head"]) == 64
 
         retained = log.compact()
         assert retained == 2
         assert log_path.exists()
         assert len(log_path.read_text(encoding="utf-8").splitlines()) == 2
+
+    def test_event_log_detects_tampering(self, tmp_path) -> None:
+        log_path = tmp_path / "events.jsonl"
+        log = EventLog(log_path)
+        root = RecommendationEvent(
+            model_id="procurement-hub",
+            model_version="2.0.0",
+            input_snapshot_ref="snapshot://tamper",
+            recommendation_type="supplier_negotiation",
+            recommendation_payload={"supplier_id": "S001"},
+            confidence_score=0.77,
+        )
+        event_id = log.record(root)
+        log.approve(event_id, "approver-2")
+
+        lines = log_path.read_text(encoding="utf-8").splitlines()
+        tampered = lines[0].replace("supplier_negotiation", "supplier_renegotiation", 1)
+        log_path.write_text("\n".join([tampered, *lines[1:]]) + "\n", encoding="utf-8")
+
+        reloaded = EventLog(log_path)
+        assert reloaded.verify_integrity() is False
 
     def test_event_log_archives_resolved_threads(self, tmp_path) -> None:
         log_path = tmp_path / "events.jsonl"
@@ -345,12 +374,6 @@ class TestEventLog:
 # ---------------------------------------------------------------------------
 # Access Control
 # ---------------------------------------------------------------------------
-from procurement_spend_analysis.fmcg.access_control import (
-    AccessControlService,
-    Permission,
-    Role,
-    User,
-)
 
 
 class TestAccessControl:

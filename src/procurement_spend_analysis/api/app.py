@@ -3,7 +3,6 @@ from __future__ import annotations
 import time
 import uuid
 
-import pandas as pd
 from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse

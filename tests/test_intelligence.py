@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from procurement_spend_analysis.intelligence import (
     AnomalyMethod,

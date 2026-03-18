@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
 
 from procurement_spend_analysis.billing import (
     PLANS,
-    BillingInterval,
     BillingService,
     SubscriptionStatus,
     UsageMeter,

@@ -10,7 +10,7 @@ Usage::
 
     client = ProcurementClient(
         base_url="https://api.procurementintelligence.io",
-        api_key="pi_sk_...",
+        api_key="pi_live_...",
     )
     summary = client.intelligence.summary()
     print(summary["anomalies"])
@@ -22,7 +22,7 @@ import json
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Iterator
 
 
@@ -102,7 +102,6 @@ class _HTTPTransport:
         headers["Accept"] = "text/event-stream"
         req = urllib.request.Request(url, headers=headers, method="GET")
         resp = urllib.request.urlopen(req, timeout=None)  # noqa: S310 — URL validated above
-        buffer = ""
         for line_bytes in resp:
             line = line_bytes.decode()
             if line.startswith("data: "):
@@ -153,6 +152,9 @@ class IntelligenceResource:
 
     def anomalies(self) -> dict[str, Any]:
         return self._t.get("/v1/intelligence/anomalies")
+
+    def forecast(self) -> dict[str, Any]:
+        return self._t.get("/v1/intelligence/forecast")
 
     def risk_scores(self) -> dict[str, Any]:
         return self._t.get("/v1/intelligence/risk-scores")
@@ -219,7 +221,7 @@ class ProcurementClient:
 
     Args:
         base_url: API base URL.
-        api_key: API key (``pi_sk_...`` prefix).
+        api_key: API key (``pi_live_...`` prefix).
         access_token: JWT access token (alternative to api_key).
         timeout: Request timeout in seconds.
         max_retries: Retry count for transient failures.

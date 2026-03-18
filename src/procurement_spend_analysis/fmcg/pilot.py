@@ -91,7 +91,6 @@ def select_pilot_cohort(
 
     # 50/50 store split (deterministic)
     stores = sorted(pilot_df["store_id"].unique())
-    rng = pd.array(range(len(stores)))  # deterministic order
     mid = len(stores) // 2 or 1
     control_stores = stores[:mid]
     treatment_stores = stores[mid:]

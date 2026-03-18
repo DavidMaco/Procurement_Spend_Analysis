@@ -10,13 +10,12 @@ from __future__ import annotations
 import dataclasses
 from typing import Annotated, Any
 
-import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from procurement_spend_analysis.auth import APIKeyService, JWTClaims, JWTService, RateLimiter
-from procurement_spend_analysis.billing import PLANS, BillingInterval, BillingService
+from procurement_spend_analysis.billing import PLANS, BillingService, UsageMetric
 from procurement_spend_analysis.intelligence import (
     DemandForecastEngine,
     InsightGenerator,
@@ -96,7 +95,7 @@ async def _enforce_rate_limit(
     allowed = _rate_limiter.consume(tenant.tenant_id, tenant.limits.max_api_calls_per_month)
     if not allowed:
         raise HTTPException(status_code=429, detail="Monthly API rate limit exceeded")
-    _billing_service.meter.record(tenant.tenant_id, "api_calls")
+    _billing_service.meter.record(tenant.tenant_id, UsageMetric.API_CALLS)
     return claims
 
 
@@ -261,6 +260,7 @@ def list_api_keys(claims: AuthClaims) -> list[APIKeyResponse]:
 
 class IntelligenceSummaryResponse(BaseModel):
     anomalies: list[dict[str, Any]]
+    forecasts: list[dict[str, Any]]
     risk_scores: list[dict[str, Any]]
     savings_opportunities: list[dict[str, Any]]
     insights: list[dict[str, Any]]
@@ -284,7 +284,7 @@ def intelligence_summary(claims: AuthClaims) -> IntelligenceSummaryResponse:
     risks = _risk_engine.assess(supp_df, po_df, qi_df)
     savings = _savings_finder.find(po_df, supp_df)
 
-    forecasts = _forecast_engine.forecast(po_df, date_col="order_date", value_col="unit_price")
+    forecasts = _forecast_engine.forecast(po_df, date_col="po_date", value_col="quantity")
     context = {
         "insights": bundle["insights"],
         "analytics": bundle["analytics"],
@@ -292,7 +292,7 @@ def intelligence_summary(claims: AuthClaims) -> IntelligenceSummaryResponse:
     }
     nl_insights = _insight_generator.generate(context)
 
-    _billing_service.meter.record(claims.tenant_id, "ml_jobs")
+    _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
     get_event_bus().publish(
         StreamEvent(
             event_type=EventType.JOB_COMPLETED.value,
@@ -304,10 +304,25 @@ def intelligence_summary(claims: AuthClaims) -> IntelligenceSummaryResponse:
 
     return IntelligenceSummaryResponse(
         anomalies=[dataclasses.asdict(a) for a in anomalies[:20]],
+        forecasts=[dataclasses.asdict(f) for f in forecasts[:20]],
         risk_scores=[dataclasses.asdict(r) for r in risks[:20]],
         savings_opportunities=[dataclasses.asdict(s) for s in savings[:20]],
         insights=[dataclasses.asdict(i) for i in nl_insights],
     )
+
+
+@router.get("/intelligence/forecast")
+def demand_forecast(claims: AuthClaims) -> dict[str, Any]:
+    from dashboard_data import generate_demo_bundle
+
+    bundle = generate_demo_bundle(2500, 42, 150)
+    forecasts = _forecast_engine.forecast(
+        bundle["raw"]["purchase_orders"],
+        date_col="po_date",
+        value_col="quantity",
+    )
+    _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
+    return {"forecasts": [dataclasses.asdict(f) for f in forecasts], "count": len(forecasts)}
 
 
 @router.get("/intelligence/anomalies")
@@ -316,7 +331,7 @@ def detect_anomalies(claims: AuthClaims) -> dict[str, Any]:
 
     bundle = generate_demo_bundle(2500, 42, 150)
     anomalies = _anomaly_detector.detect(bundle["raw"]["purchase_orders"])
-    _billing_service.meter.record(claims.tenant_id, "ml_jobs")
+    _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
     return {"anomalies": [dataclasses.asdict(a) for a in anomalies], "count": len(anomalies)}
 
 
@@ -330,7 +345,7 @@ def supplier_risk_scores(claims: AuthClaims) -> dict[str, Any]:
         bundle["raw"]["purchase_orders"],
         bundle["raw"]["quality_incidents"],
     )
-    _billing_service.meter.record(claims.tenant_id, "ml_jobs")
+    _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
     return {"risk_scores": [dataclasses.asdict(s) for s in scores], "count": len(scores)}
 
 
@@ -340,7 +355,7 @@ def savings_opportunities(claims: AuthClaims) -> dict[str, Any]:
 
     bundle = generate_demo_bundle(2500, 42, 150)
     opps = _savings_finder.find(bundle["raw"]["purchase_orders"], bundle["raw"]["suppliers"])
-    _billing_service.meter.record(claims.tenant_id, "ml_jobs")
+    _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
     return {"opportunities": [dataclasses.asdict(o) for o in opps], "count": len(opps)}
 
 
