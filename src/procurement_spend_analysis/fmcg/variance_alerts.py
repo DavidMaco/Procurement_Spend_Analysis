@@ -86,7 +86,9 @@ class VarianceAlertEngine:
 
         for rule in self._rules:
             if rule.group_by:
-                alerts.extend(self._evaluate_grouped(rule, baseline_df, current_df, now))
+                alerts.extend(
+                    self._evaluate_grouped(rule, baseline_df, current_df, now)
+                )
             else:
                 alert = self._evaluate_scalar(rule, baseline_df, current_df, now)
                 if alert is not None:
@@ -131,10 +133,18 @@ class VarianceAlertEngine:
         now: str,
     ) -> list[Alert]:
         alerts: list[Alert] = []
-        baseline_metrics = baseline_df.assign(_metric_value=self._metric_values(rule, baseline_df))
-        current_metrics = current_df.assign(_metric_value=self._metric_values(rule, current_df))
-        base_agg = baseline_metrics.groupby(rule.group_by)["_metric_value"].agg(rule.aggregation)
-        curr_agg = current_metrics.groupby(rule.group_by)["_metric_value"].agg(rule.aggregation)
+        baseline_metrics = baseline_df.assign(
+            _metric_value=self._metric_values(rule, baseline_df)
+        )
+        current_metrics = current_df.assign(
+            _metric_value=self._metric_values(rule, current_df)
+        )
+        base_agg = baseline_metrics.groupby(rule.group_by)["_metric_value"].agg(
+            rule.aggregation
+        )
+        curr_agg = current_metrics.groupby(rule.group_by)["_metric_value"].agg(
+            rule.aggregation
+        )
 
         for key in curr_agg.index:
             if key not in base_agg.index:
@@ -193,6 +203,7 @@ class VarianceAlertEngine:
 # Factory with default rules
 # ---------------------------------------------------------------------------
 
+
 def default_variance_engine() -> VarianceAlertEngine:
     """Return an engine pre-loaded with standard commercial + procurement rules."""
     engine = VarianceAlertEngine()
@@ -202,47 +213,55 @@ def default_variance_engine() -> VarianceAlertEngine:
         return (df["gross_sales"] - df["net_sales"]) / gross
 
     # Commercial rules
-    engine.add_rule(VarianceRule(
-        name="gross_to_net_leakage_spike",
-        metric_column="gross_to_net_leakage",
-        category=AlertCategory.COMMERCIAL,
-        threshold_pct=15.0,
-        metric_fn=_gross_to_net_leakage,
-        severity=AlertSeverity.WARNING,
-        aggregation="mean",
-        group_by=["category"],
-        description="Alert when gross-to-net leakage rises >15% vs baseline by category",
-    ))
-    engine.add_rule(VarianceRule(
-        name="net_sales_drop",
-        metric_column="net_sales",
-        category=AlertCategory.COMMERCIAL,
-        threshold_pct=10.0,
-        severity=AlertSeverity.CRITICAL,
-        aggregation="sum",
-        description="Alert when total net sales drop >10% vs baseline",
-    ))
+    engine.add_rule(
+        VarianceRule(
+            name="gross_to_net_leakage_spike",
+            metric_column="gross_to_net_leakage",
+            category=AlertCategory.COMMERCIAL,
+            threshold_pct=15.0,
+            metric_fn=_gross_to_net_leakage,
+            severity=AlertSeverity.WARNING,
+            aggregation="mean",
+            group_by=["category"],
+            description="Alert when gross-to-net leakage rises >15% vs baseline by category",
+        )
+    )
+    engine.add_rule(
+        VarianceRule(
+            name="net_sales_drop",
+            metric_column="net_sales",
+            category=AlertCategory.COMMERCIAL,
+            threshold_pct=10.0,
+            severity=AlertSeverity.CRITICAL,
+            aggregation="sum",
+            description="Alert when total net sales drop >10% vs baseline",
+        )
+    )
 
     # Procurement rules
-    engine.add_rule(VarianceRule(
-        name="purchase_cost_increase",
-        metric_column="purchase_cost",
-        category=AlertCategory.PROCUREMENT,
-        threshold_pct=5.0,
-        severity=AlertSeverity.WARNING,
-        aggregation="mean",
-        group_by=["supplier_id"],
-        description="Alert when avg purchase cost rises >5% by supplier",
-    ))
-    engine.add_rule(VarianceRule(
-        name="lead_time_deterioration",
-        metric_column="lead_time_days",
-        category=AlertCategory.PROCUREMENT,
-        threshold_pct=20.0,
-        severity=AlertSeverity.WARNING,
-        aggregation="mean",
-        group_by=["supplier_id"],
-        description="Alert when avg lead time worsens >20% by supplier",
-    ))
+    engine.add_rule(
+        VarianceRule(
+            name="purchase_cost_increase",
+            metric_column="purchase_cost",
+            category=AlertCategory.PROCUREMENT,
+            threshold_pct=5.0,
+            severity=AlertSeverity.WARNING,
+            aggregation="mean",
+            group_by=["supplier_id"],
+            description="Alert when avg purchase cost rises >5% by supplier",
+        )
+    )
+    engine.add_rule(
+        VarianceRule(
+            name="lead_time_deterioration",
+            metric_column="lead_time_days",
+            category=AlertCategory.PROCUREMENT,
+            threshold_pct=20.0,
+            severity=AlertSeverity.WARNING,
+            aggregation="mean",
+            group_by=["supplier_id"],
+            description="Alert when avg lead time worsens >20% by supplier",
+        )
+    )
 
     return engine

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 
-
 from procurement_spend_analysis.streaming import (
     EventBus,
     EventType,
@@ -18,6 +17,7 @@ from procurement_spend_analysis.streaming import (
 
 
 # ── EventBus ─────────────────────────────────────────────────────────────
+
 
 class TestEventBus:
     def test_publish_and_recent(self):
@@ -51,23 +51,34 @@ class TestEventBus:
         received = []
         bus.subscribe_all(lambda e: received.append(e))
         for etype in [EventType.ALERT_FIRED.value, EventType.FORECAST_READY.value]:
-            bus.publish(StreamEvent(event_type=etype, tenant_id="t1", payload={}, source="test"))
+            bus.publish(
+                StreamEvent(event_type=etype, tenant_id="t1", payload={}, source="test")
+            )
         assert len(received) == 2
 
     def test_filter_by_event_type(self):
         bus = EventBus()
-        bus.publish(StreamEvent(event_type="a", tenant_id="t1", payload={}, source="test"))
-        bus.publish(StreamEvent(event_type="b", tenant_id="t1", payload={}, source="test"))
+        bus.publish(
+            StreamEvent(event_type="a", tenant_id="t1", payload={}, source="test")
+        )
+        bus.publish(
+            StreamEvent(event_type="b", tenant_id="t1", payload={}, source="test")
+        )
         assert len(bus.recent_events(event_type="a")) == 1
 
     def test_filter_by_tenant(self):
         bus = EventBus()
-        bus.publish(StreamEvent(event_type="a", tenant_id="t1", payload={}, source="test"))
-        bus.publish(StreamEvent(event_type="a", tenant_id="t2", payload={}, source="test"))
+        bus.publish(
+            StreamEvent(event_type="a", tenant_id="t1", payload={}, source="test")
+        )
+        bus.publish(
+            StreamEvent(event_type="a", tenant_id="t2", payload={}, source="test")
+        )
         assert len(bus.recent_events(tenant_id="t1")) == 1
 
 
 # ── SSEManager ───────────────────────────────────────────────────────────
+
 
 class TestSSEManager:
     def test_get_channel(self):
@@ -79,7 +90,9 @@ class TestSSEManager:
         mgr = SSEManager()
         ch = mgr.get_channel("t1")
         q = ch.connect()
-        event = StreamEvent(event_type="test", tenant_id="t1", payload={}, source="test")
+        event = StreamEvent(
+            event_type="test", tenant_id="t1", payload={}, source="test"
+        )
         ch.broadcast(event)
         # Queue should have the event
         assert not q.empty()
@@ -87,6 +100,7 @@ class TestSSEManager:
 
 
 # ── WebhookService ───────────────────────────────────────────────────────
+
 
 class TestWebhookService:
     def test_register_webhook(self):
@@ -121,9 +135,15 @@ class TestWebhookService:
 
     def test_matching_endpoints(self):
         svc = WebhookService()
-        svc.register(tenant_id="t1", url="https://a.com/hook", event_types=["alert.fired"])
-        svc.register(tenant_id="t1", url="https://b.com/hook", event_types=["forecast.ready"])
-        event = StreamEvent(event_type="alert.fired", tenant_id="t1", payload={}, source="test")
+        svc.register(
+            tenant_id="t1", url="https://a.com/hook", event_types=["alert.fired"]
+        )
+        svc.register(
+            tenant_id="t1", url="https://b.com/hook", event_types=["forecast.ready"]
+        )
+        event = StreamEvent(
+            event_type="alert.fired", tenant_id="t1", payload={}, source="test"
+        )
         matches = svc.matching_endpoints(event)
         assert len(matches) == 1
         assert matches[0].url == "https://a.com/hook"
@@ -144,6 +164,7 @@ class TestWebhookService:
 
 
 # ── Singletons ───────────────────────────────────────────────────────────
+
 
 class TestSingletons:
     def test_event_bus_singleton(self):

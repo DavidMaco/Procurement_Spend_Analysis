@@ -1,6 +1,9 @@
 import pandas as pd
 
-from procurement_spend_analysis.ml import detect_procurement_anomalies, forecast_category_demand
+from procurement_spend_analysis.ml import (
+    detect_procurement_anomalies,
+    forecast_category_demand,
+)
 
 
 def _purchase_orders() -> pd.DataFrame:
@@ -10,8 +13,34 @@ def _purchase_orders() -> pd.DataFrame:
             "po_date": pd.date_range("2024-01-01", periods=12, freq="MS"),
             "category": ["Packaging"] * 12,
             "quantity": [100, 120, 110, 130, 125, 140, 145, 138, 150, 160, 158, 170],
-            "unit_price_ngn": [1000, 1005, 998, 1002, 1010, 1007, 1008, 1003, 1004, 1006, 1002, 4500],
-            "total_amount_ngn": [100000, 120600, 109780, 130260, 126250, 140980, 146160, 138414, 150600, 160960, 158316, 765000],
+            "unit_price_ngn": [
+                1000,
+                1005,
+                998,
+                1002,
+                1010,
+                1007,
+                1008,
+                1003,
+                1004,
+                1006,
+                1002,
+                4500,
+            ],
+            "total_amount_ngn": [
+                100000,
+                120600,
+                109780,
+                130260,
+                126250,
+                140980,
+                146160,
+                138414,
+                150600,
+                160960,
+                158316,
+                765000,
+            ],
             "currency": ["NGN"] * 12,
         }
     )

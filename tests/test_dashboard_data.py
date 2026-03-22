@@ -164,23 +164,33 @@ def test_export_upload_template_pack_contains_expected_files():
 def test_normalize_raw_tables_raises_when_required_dataset_missing():
     """Normalization must raise when a required dataset is absent."""
     with pytest.raises(UploadValidationError, match="Missing required dataset"):
-        normalize_raw_tables({"suppliers": pd.DataFrame({"supplier_id": ["S1"], "supplier_name": ["A"]})})
+        normalize_raw_tables(
+            {"suppliers": pd.DataFrame({"supplier_id": ["S1"], "supplier_name": ["A"]})}
+        )
 
 
 def test_normalize_raw_tables_raises_when_required_column_missing():
     """Normalization must raise when a required column is absent after alias search."""
     with pytest.raises(UploadValidationError, match="missing required columns"):
-        normalize_raw_tables({
-            "suppliers": pd.DataFrame({"supplier_id": ["S1"], "supplier_name": ["A"]}),
-            "materials": pd.DataFrame({"material_id": ["M1"], "material_name": ["B"]}),
-            "purchase_orders": pd.DataFrame({
-                "po_number": ["PO1"],
-                "po_date": ["2025-01-01"],
-                # supplier_id is missing — must trigger error
-                "material_id": ["M1"],
-                "quantity": [10],
-            }),
-        })
+        normalize_raw_tables(
+            {
+                "suppliers": pd.DataFrame(
+                    {"supplier_id": ["S1"], "supplier_name": ["A"]}
+                ),
+                "materials": pd.DataFrame(
+                    {"material_id": ["M1"], "material_name": ["B"]}
+                ),
+                "purchase_orders": pd.DataFrame(
+                    {
+                        "po_number": ["PO1"],
+                        "po_date": ["2025-01-01"],
+                        # supplier_id is missing — must trigger error
+                        "material_id": ["M1"],
+                        "quantity": [10],
+                    }
+                ),
+            }
+        )
 
 
 def test_build_bundle_from_upload_bytes_rejects_empty_upload():
@@ -205,9 +215,15 @@ def test_dashboard_upload_limits_match_shared_settings():
 
 def test_grade_supplier_performance_returns_expected_grades():
     """Validate the A–E grading logic for several known scenarios."""
-    grade_a = _grade_supplier_performance(pd.Series({"on_time_delivery_pct": 98, "quality_incidents": 0}))
-    grade_c = _grade_supplier_performance(pd.Series({"on_time_delivery_pct": 85, "quality_incidents": 3}))
-    grade_e = _grade_supplier_performance(pd.Series({"on_time_delivery_pct": 50, "quality_incidents": 10}))
+    grade_a = _grade_supplier_performance(
+        pd.Series({"on_time_delivery_pct": 98, "quality_incidents": 0})
+    )
+    grade_c = _grade_supplier_performance(
+        pd.Series({"on_time_delivery_pct": 85, "quality_incidents": 3})
+    )
+    grade_e = _grade_supplier_performance(
+        pd.Series({"on_time_delivery_pct": 50, "quality_incidents": 10})
+    )
     assert grade_a == "A"
     assert grade_c == "C"
     assert grade_e == "E"
@@ -224,24 +240,41 @@ def test_infer_dataset_key_from_diverse_filenames():
 
 def test_normalize_handles_empty_quality_incidents_gracefully():
     """A bundle with no quality incidents should still normalize cleanly."""
-    suppliers = pd.DataFrame({
-        "supplier_id": ["S1"], "supplier_name": ["Test Supplier"],
-        "category": ["Raw Materials"], "country": ["Nigeria"],
-    })
-    materials = pd.DataFrame({
-        "material_id": ["M1"], "material_name": ["Test Item"],
-        "category": ["Raw Materials"],
-    })
-    purchase_orders = pd.DataFrame({
-        "po_number": ["PO1"], "po_date": ["2025-06-01"],
-        "supplier_id": ["S1"], "material_id": ["M1"],
-        "quantity": [50], "unit_price_ngn": [1000],
-    })
-    normalized, _ = normalize_raw_tables({
-        "suppliers": suppliers,
-        "materials": materials,
-        "purchase_orders": purchase_orders,
-        # quality_incidents intentionally omitted
-    })
+    suppliers = pd.DataFrame(
+        {
+            "supplier_id": ["S1"],
+            "supplier_name": ["Test Supplier"],
+            "category": ["Raw Materials"],
+            "country": ["Nigeria"],
+        }
+    )
+    materials = pd.DataFrame(
+        {
+            "material_id": ["M1"],
+            "material_name": ["Test Item"],
+            "category": ["Raw Materials"],
+        }
+    )
+    purchase_orders = pd.DataFrame(
+        {
+            "po_number": ["PO1"],
+            "po_date": ["2025-06-01"],
+            "supplier_id": ["S1"],
+            "material_id": ["M1"],
+            "quantity": [50],
+            "unit_price_ngn": [1000],
+        }
+    )
+    normalized, _ = normalize_raw_tables(
+        {
+            "suppliers": suppliers,
+            "materials": materials,
+            "purchase_orders": purchase_orders,
+            # quality_incidents intentionally omitted
+        }
+    )
     assert "quality_incidents" in normalized
-    assert normalized["quality_incidents"].empty or len(normalized["quality_incidents"]) == 0
+    assert (
+        normalized["quality_incidents"].empty
+        or len(normalized["quality_incidents"]) == 0
+    )

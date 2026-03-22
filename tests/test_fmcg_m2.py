@@ -182,7 +182,9 @@ class TestEventLog:
             confidence_score=0.87,
         )
 
-    def test_record_and_get(self, log: EventLog, sample_event: RecommendationEvent) -> None:
+    def test_record_and_get(
+        self, log: EventLog, sample_event: RecommendationEvent
+    ) -> None:
         eid = log.record(sample_event)
         assert log.count() == 1
         retrieved = log.get(eid)
@@ -207,7 +209,9 @@ class TestEventLog:
         results = log.query(recommendation_type="promo_depth")
         assert len(results) == 2
 
-    def test_approve_and_reject(self, log: EventLog, sample_event: RecommendationEvent) -> None:
+    def test_approve_and_reject(
+        self, log: EventLog, sample_event: RecommendationEvent
+    ) -> None:
         eid = log.record(sample_event)
         updated = log.approve(eid, "user-42")
         assert updated.action_taken == ActionTaken.APPROVED
@@ -431,7 +435,9 @@ class TestAccessControl:
     def test_add_custom_role(self, svc: AccessControlService) -> None:
         custom = Role(
             name="finance",
-            permissions=frozenset({Permission.VIEW_KPI_CATALOG, Permission.VIEW_EVENT_LOG}),
+            permissions=frozenset(
+                {Permission.VIEW_KPI_CATALOG, Permission.VIEW_EVENT_LOG}
+            ),
         )
         svc.add_role(custom)
         assert svc.get_role("finance").name == "finance"

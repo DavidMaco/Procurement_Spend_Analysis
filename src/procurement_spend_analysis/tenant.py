@@ -26,7 +26,8 @@ from pydantic import BaseModel, Field
 # ---------------------------------------------------------------------------
 
 _current_tenant: contextvars.ContextVar[Optional["Tenant"]] = contextvars.ContextVar(
-    "current_tenant", default=None,
+    "current_tenant",
+    default=None,
 )
 
 
@@ -48,6 +49,7 @@ def require_current_tenant() -> "Tenant":
 # ---------------------------------------------------------------------------
 # Tenant model
 # ---------------------------------------------------------------------------
+
 
 class TenantTier(str, Enum):
     FREE = "free"
@@ -128,7 +130,9 @@ class Tenant(BaseModel):
     isolation_mode: IsolationMode = IsolationMode.SHARED
     owner_email: str
     region: str = "us-east-1"  # AWS region for data residency
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     metadata: dict[str, Any] = Field(default_factory=dict)
     is_active: bool = True
 
@@ -142,6 +146,7 @@ class Tenant(BaseModel):
 # ---------------------------------------------------------------------------
 # In-memory tenant registry (replaced by DynamoDB/Postgres in production)
 # ---------------------------------------------------------------------------
+
 
 class TenantRegistry:
     """Thread-safe tenant store with CRUD operations."""

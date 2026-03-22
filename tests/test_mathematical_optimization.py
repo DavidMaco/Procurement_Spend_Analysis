@@ -5,14 +5,22 @@ from procurement_spend_analysis.optimization import optimize_supplier_mix
 
 
 @given(
-    cost_a=st.floats(min_value=10, max_value=1000, allow_nan=False, allow_infinity=False),
-    cost_b=st.floats(min_value=10, max_value=1000, allow_nan=False, allow_infinity=False),
-    cost_c=st.floats(min_value=10, max_value=1000, allow_nan=False, allow_infinity=False),
+    cost_a=st.floats(
+        min_value=10, max_value=1000, allow_nan=False, allow_infinity=False
+    ),
+    cost_b=st.floats(
+        min_value=10, max_value=1000, allow_nan=False, allow_infinity=False
+    ),
+    cost_c=st.floats(
+        min_value=10, max_value=1000, allow_nan=False, allow_infinity=False
+    ),
     otd_a=st.floats(min_value=60, max_value=100, allow_nan=False, allow_infinity=False),
     otd_b=st.floats(min_value=60, max_value=100, allow_nan=False, allow_infinity=False),
     otd_c=st.floats(min_value=60, max_value=100, allow_nan=False, allow_infinity=False),
 )
-def test_mip_supplier_mix_preserves_share_constraints(cost_a, cost_b, cost_c, otd_a, otd_b, otd_c):
+def test_mip_supplier_mix_preserves_share_constraints(
+    cost_a, cost_b, cost_c, otd_a, otd_b, otd_c
+):
     supplier_metrics = pd.DataFrame(
         {
             "category": ["Packaging", "Packaging", "Packaging"],

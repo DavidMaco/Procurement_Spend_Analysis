@@ -57,9 +57,14 @@ class KPICatalog:
 # KPI formula functions
 # ---------------------------------------------------------------------------
 
-def _net_revenue_uplift_pct(treatment: pd.DataFrame, control: Optional[pd.DataFrame]) -> float:
+
+def _net_revenue_uplift_pct(
+    treatment: pd.DataFrame, control: Optional[pd.DataFrame]
+) -> float:
     t_rev = treatment["net_sales"].sum()
-    c_rev = control["net_sales"].sum() if control is not None and len(control) else t_rev
+    c_rev = (
+        control["net_sales"].sum() if control is not None and len(control) else t_rev
+    )
     if c_rev == 0:
         return 0.0
     return (t_rev - c_rev) / c_rev * 100
@@ -79,7 +84,9 @@ def _promo_roi_pct(treatment: pd.DataFrame, _control: Optional[pd.DataFrame]) ->
     return margin / promo_cost * 100
 
 
-def _gross_to_net_leakage_pct(treatment: pd.DataFrame, _control: Optional[pd.DataFrame]) -> float:
+def _gross_to_net_leakage_pct(
+    treatment: pd.DataFrame, _control: Optional[pd.DataFrame]
+) -> float:
     gross = treatment["gross_sales"].sum()
     net = treatment["net_sales"].sum()
     if gross == 0:
@@ -87,15 +94,23 @@ def _gross_to_net_leakage_pct(treatment: pd.DataFrame, _control: Optional[pd.Dat
     return (gross - net) / gross * 100
 
 
-def _purchase_cost_reduction_pct(treatment: pd.DataFrame, control: Optional[pd.DataFrame]) -> float:
-    baseline = control["purchase_cost"].mean() if control is not None and len(control) else treatment["purchase_cost"].mean()
+def _purchase_cost_reduction_pct(
+    treatment: pd.DataFrame, control: Optional[pd.DataFrame]
+) -> float:
+    baseline = (
+        control["purchase_cost"].mean()
+        if control is not None and len(control)
+        else treatment["purchase_cost"].mean()
+    )
     realized = treatment["purchase_cost"].mean()
     if baseline == 0:
         return 0.0
     return (baseline - realized) / baseline * 100
 
 
-def _supplier_lead_time_reliability_pct(treatment: pd.DataFrame, _control: Optional[pd.DataFrame]) -> float:
+def _supplier_lead_time_reliability_pct(
+    treatment: pd.DataFrame, _control: Optional[pd.DataFrame]
+) -> float:
     # Heuristic: on-time = lead_time_days <= median lead_time
     median_lt = treatment["lead_time_days"].median()
     on_time = (treatment["lead_time_days"] <= median_lt).sum()
@@ -105,8 +120,14 @@ def _supplier_lead_time_reliability_pct(treatment: pd.DataFrame, _control: Optio
     return on_time / total * 100
 
 
-def _negotiated_savings_realization_pct(treatment: pd.DataFrame, control: Optional[pd.DataFrame]) -> float:
-    baseline_cost = control["purchase_cost"].mean() if control is not None and len(control) else treatment["purchase_cost"].mean()
+def _negotiated_savings_realization_pct(
+    treatment: pd.DataFrame, control: Optional[pd.DataFrame]
+) -> float:
+    baseline_cost = (
+        control["purchase_cost"].mean()
+        if control is not None and len(control)
+        else treatment["purchase_cost"].mean()
+    )
     realized_cost = treatment["purchase_cost"].mean()
     negotiated_savings = baseline_cost - realized_cost
     if baseline_cost == 0:
@@ -114,7 +135,9 @@ def _negotiated_savings_realization_pct(treatment: pd.DataFrame, control: Option
     return negotiated_savings / baseline_cost * 100
 
 
-def _contribution_margin_uplift_pct(treatment: pd.DataFrame, control: Optional[pd.DataFrame]) -> float:
+def _contribution_margin_uplift_pct(
+    treatment: pd.DataFrame, control: Optional[pd.DataFrame]
+) -> float:
     def _cm(df: pd.DataFrame) -> float:
         return (df["net_sales"] - df["purchase_cost"] * df["units_sold"]).sum()
 
@@ -125,20 +148,24 @@ def _contribution_margin_uplift_pct(treatment: pd.DataFrame, control: Optional[p
     return (t_cm - c_cm) / abs(c_cm) * 100
 
 
-def _pilot_payback_period_days(treatment: pd.DataFrame, control: Optional[pd.DataFrame]) -> float:
+def _pilot_payback_period_days(
+    treatment: pd.DataFrame, control: Optional[pd.DataFrame]
+) -> float:
     """Simplified payback: days of incremental margin to cover a notional pilot cost.
 
     Uses an assumed fixed pilot cost of 50 000 (currency units) — the real cost
     will come from the project configuration in later milestones.
     """
     pilot_cost = 50_000.0
-    t_margin = (treatment["net_sales"] - treatment["purchase_cost"] * treatment["units_sold"]).sum()
+    t_margin = (
+        treatment["net_sales"] - treatment["purchase_cost"] * treatment["units_sold"]
+    ).sum()
     c_margin = (
         (control["net_sales"] - control["purchase_cost"] * control["units_sold"]).sum()
         if control is not None and len(control)
         else 0.0
     )
-    daily_incremental = (t_margin - c_margin)
+    daily_incremental = t_margin - c_margin
     n_days = treatment["date"].nunique() or 1
     daily_rate = daily_incremental / n_days
     if daily_rate <= 0:
@@ -150,62 +177,103 @@ def _pilot_payback_period_days(treatment: pd.DataFrame, control: Optional[pd.Dat
 # Factory
 # ---------------------------------------------------------------------------
 
+
 def default_kpi_catalog() -> KPICatalog:
     """Return a :class:`KPICatalog` pre-loaded with standard FMCG OS KPIs."""
     cat = KPICatalog()
 
     # Commercial KPIs
-    cat.register(KPI(
-        "net_revenue_uplift_pct", "Net Revenue Uplift %",
-        "(treatment_net_revenue − control_expected_net_revenue) / control_expected_net_revenue × 100",
-        _net_revenue_uplift_pct, "commercial", cadence="weekly",
-        description="Percentage uplift in net revenue vs. control group.",
-    ))
-    cat.register(KPI(
-        "promo_roi_pct", "Promo ROI %",
-        "incremental_net_margin_from_promo / promo_cost × 100",
-        _promo_roi_pct, "commercial", cadence="weekly",
-        description="Return on promotional investment.",
-    ))
-    cat.register(KPI(
-        "gross_to_net_leakage_pct", "Gross-to-Net Leakage %",
-        "(gross_sales − net_sales) / gross_sales × 100",
-        _gross_to_net_leakage_pct, "commercial", cadence="monthly",
-        description="Revenue leakage between gross and net sales.",
-    ))
+    cat.register(
+        KPI(
+            "net_revenue_uplift_pct",
+            "Net Revenue Uplift %",
+            "(treatment_net_revenue − control_expected_net_revenue) / control_expected_net_revenue × 100",
+            _net_revenue_uplift_pct,
+            "commercial",
+            cadence="weekly",
+            description="Percentage uplift in net revenue vs. control group.",
+        )
+    )
+    cat.register(
+        KPI(
+            "promo_roi_pct",
+            "Promo ROI %",
+            "incremental_net_margin_from_promo / promo_cost × 100",
+            _promo_roi_pct,
+            "commercial",
+            cadence="weekly",
+            description="Return on promotional investment.",
+        )
+    )
+    cat.register(
+        KPI(
+            "gross_to_net_leakage_pct",
+            "Gross-to-Net Leakage %",
+            "(gross_sales − net_sales) / gross_sales × 100",
+            _gross_to_net_leakage_pct,
+            "commercial",
+            cadence="monthly",
+            description="Revenue leakage between gross and net sales.",
+        )
+    )
 
     # Procurement KPIs
-    cat.register(KPI(
-        "purchase_cost_reduction_pct", "Purchase Cost Reduction %",
-        "(baseline_unit_cost − realized_unit_cost) / baseline_unit_cost × 100",
-        _purchase_cost_reduction_pct, "procurement", cadence="monthly",
-        description="Reduction in average purchase cost vs. baseline.",
-    ))
-    cat.register(KPI(
-        "supplier_lead_time_reliability_pct", "Supplier Lead-Time Reliability %",
-        "on_time_deliveries / total_deliveries × 100",
-        _supplier_lead_time_reliability_pct, "procurement", cadence="monthly",
-        description="Percentage of deliveries within acceptable lead time.",
-    ))
-    cat.register(KPI(
-        "negotiated_savings_realization_pct", "Negotiated Savings Realisation %",
-        "realized_savings / negotiated_savings × 100",
-        _negotiated_savings_realization_pct, "procurement", cadence="monthly",
-        description="How much of the negotiated savings actually materialised.",
-    ))
+    cat.register(
+        KPI(
+            "purchase_cost_reduction_pct",
+            "Purchase Cost Reduction %",
+            "(baseline_unit_cost − realized_unit_cost) / baseline_unit_cost × 100",
+            _purchase_cost_reduction_pct,
+            "procurement",
+            cadence="monthly",
+            description="Reduction in average purchase cost vs. baseline.",
+        )
+    )
+    cat.register(
+        KPI(
+            "supplier_lead_time_reliability_pct",
+            "Supplier Lead-Time Reliability %",
+            "on_time_deliveries / total_deliveries × 100",
+            _supplier_lead_time_reliability_pct,
+            "procurement",
+            cadence="monthly",
+            description="Percentage of deliveries within acceptable lead time.",
+        )
+    )
+    cat.register(
+        KPI(
+            "negotiated_savings_realization_pct",
+            "Negotiated Savings Realisation %",
+            "realized_savings / negotiated_savings × 100",
+            _negotiated_savings_realization_pct,
+            "procurement",
+            cadence="monthly",
+            description="How much of the negotiated savings actually materialised.",
+        )
+    )
 
     # Shared KPIs
-    cat.register(KPI(
-        "contribution_margin_uplift_pct", "Contribution Margin Uplift %",
-        "(treatment_CM − control_CM) / |control_CM| × 100",
-        _contribution_margin_uplift_pct, "shared", cadence="monthly",
-        description="Uplift in contribution margin vs. control.",
-    ))
-    cat.register(KPI(
-        "pilot_payback_period_days", "Pilot Payback Period (days)",
-        "pilot_cost / daily_incremental_margin",
-        _pilot_payback_period_days, "shared", cadence="monthly",
-        description="Estimated days until pilot investment is recovered.",
-    ))
+    cat.register(
+        KPI(
+            "contribution_margin_uplift_pct",
+            "Contribution Margin Uplift %",
+            "(treatment_CM − control_CM) / |control_CM| × 100",
+            _contribution_margin_uplift_pct,
+            "shared",
+            cadence="monthly",
+            description="Uplift in contribution margin vs. control.",
+        )
+    )
+    cat.register(
+        KPI(
+            "pilot_payback_period_days",
+            "Pilot Payback Period (days)",
+            "pilot_cost / daily_incremental_margin",
+            _pilot_payback_period_days,
+            "shared",
+            cadence="monthly",
+            description="Estimated days until pilot investment is recovered.",
+        )
+    )
 
     return cat

@@ -24,7 +24,9 @@ FMCGSalesSchema = pa.DataFrameSchema(
         "is_weekend": pa.Column(int, nullable=False, checks=pa.Check.isin([0, 1])),
         "is_holiday": pa.Column(int, nullable=False, checks=pa.Check.isin([0, 1])),
         "temperature": pa.Column(float, nullable=False),
-        "rain_mm": pa.Column(float, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)),
+        "rain_mm": pa.Column(
+            float, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)
+        ),
         "store_id": pa.Column(str, nullable=False),
         "country": pa.Column(str, nullable=False),
         "city": pa.Column(str, nullable=False),
@@ -36,17 +38,31 @@ FMCGSalesSchema = pa.DataFrameSchema(
         "category": pa.Column(str, nullable=False),
         "subcategory": pa.Column(str, nullable=False),
         "brand": pa.Column(str, nullable=False),
-        "units_sold": pa.Column(int, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)),
+        "units_sold": pa.Column(
+            int, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)
+        ),
         "list_price": pa.Column(float, nullable=False, checks=pa.Check.greater_than(0)),
-        "discount_pct": pa.Column(float, nullable=False, checks=pa.Check.in_range(0.0, 1.0)),
+        "discount_pct": pa.Column(
+            float, nullable=False, checks=pa.Check.in_range(0.0, 1.0)
+        ),
         "promo_flag": pa.Column(int, nullable=False, checks=pa.Check.isin([0, 1])),
-        "gross_sales": pa.Column(float, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)),
-        "net_sales": pa.Column(float, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)),
-        "stock_on_hand": pa.Column(int, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)),
+        "gross_sales": pa.Column(
+            float, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)
+        ),
+        "net_sales": pa.Column(
+            float, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)
+        ),
+        "stock_on_hand": pa.Column(
+            int, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)
+        ),
         "stock_out_flag": pa.Column(int, nullable=False, checks=pa.Check.isin([0, 1])),
-        "lead_time_days": pa.Column(int, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)),
+        "lead_time_days": pa.Column(
+            int, nullable=False, checks=pa.Check.greater_than_or_equal_to(0)
+        ),
         "supplier_id": pa.Column(str, nullable=False),
-        "purchase_cost": pa.Column(float, nullable=False, checks=pa.Check.greater_than(0)),
+        "purchase_cost": pa.Column(
+            float, nullable=False, checks=pa.Check.greater_than(0)
+        ),
         "margin_pct": pa.Column(float, nullable=False),
     },
     strict=False,

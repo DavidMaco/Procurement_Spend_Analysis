@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import uuid
 from io import BytesIO
 
 import httpx
@@ -14,7 +15,9 @@ logging.disable(logging.CRITICAL)
 def _request(method: str, url: str, **kwargs) -> httpx.Response:
     async def _run() -> httpx.Response:
         transport = httpx.ASGITransport(app=app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as client:
             return await client.request(method, url, **kwargs)
 
     return asyncio.run(_run())
@@ -22,6 +25,31 @@ def _request(method: str, url: str, **kwargs) -> httpx.Response:
 
 def _headers(*roles: str, user_id: str = "demo-user") -> dict[str, str]:
     return {"X-User-Id": user_id, "X-Roles": ",".join(roles)}
+
+
+def _saas_auth_headers() -> dict[str, str]:
+    slug = f"tenant-{uuid.uuid4().hex[:8]}"
+    tenant_response = _request(
+        "POST",
+        "/v1/tenants",
+        json={
+            "name": "Test Tenant",
+            "slug": slug,
+            "owner_email": f"{slug}@example.com",
+            "tier": "professional",
+        },
+    )
+    assert tenant_response.status_code == 201
+    tenant_id = tenant_response.json()["tenant_id"]
+
+    token_response = _request(
+        "POST",
+        "/v1/auth/token",
+        json={"user_id": "user-1", "tenant_id": tenant_id, "roles": ["admin"]},
+    )
+    assert token_response.status_code == 200
+    token = token_response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
 
 def _make_fmcg_upload(*, discount_pct: float, net_multiplier: float = 1.0) -> BytesIO:
@@ -78,7 +106,9 @@ def test_health_endpoint_returns_ok():
 def test_metrics_endpoint_responds():
     response = _request("GET", "/metrics")
     assert response.status_code == 200
-    assert b"procurement_api_requests_total" in response.content or response.content == b""
+    assert (
+        b"procurement_api_requests_total" in response.content or response.content == b""
+    )
 
 
 def test_demo_endpoint_returns_summary_and_insights():
@@ -133,7 +163,10 @@ def test_fmcg_alert_evaluation_returns_fired_alerts():
     assert response.status_code == 200
     payload = response.json()
     assert payload["alert_count"] >= 1
-    assert any(alert["rule_name"] == "gross_to_net_leakage_spike" for alert in payload["alerts"])
+    assert any(
+        alert["rule_name"] == "gross_to_net_leakage_spike"
+        for alert in payload["alerts"]
+    )
 
 
 def test_fmcg_event_lifecycle_exposes_history():
@@ -173,3 +206,48 @@ def test_fmcg_event_lifecycle_exposes_history():
     assert len(history) == 2
     assert history[0]["event_id"] == event["event_id"]
     assert history[1]["related_event_id"] == event["event_id"]
+
+
+def test_fmcg_event_stats_include_integrity_fields():
+    create_response = _request(
+        "POST",
+        "/fmcg/events/recommendations",
+        headers=_headers("analyst"),
+        json={
+            "model_id": "promo_v3",
+            "model_version": "2.2.0",
+            "input_snapshot_ref": "s3://bucket/snap_003.parquet",
+            "recommendation_type": "supplier_switch",
+            "recommendation_payload": {
+                "supplier_id": "SUP-1",
+                "target_supplier_id": "SUP-2",
+            },
+            "confidence_score": 0.84,
+        },
+    )
+    assert create_response.status_code == 200
+
+    response = _request("GET", "/fmcg/events/stats", headers=_headers("admin"))
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["integrity_verified"] is True
+    assert len(payload["chain_head"]) == 64
+
+
+def test_saas_intelligence_summary_includes_forecasts():
+    response = _request("GET", "/v1/intelligence/summary", headers=_saas_auth_headers())
+    assert response.status_code == 200
+    payload = response.json()
+    assert "forecasts" in payload
+    assert isinstance(payload["forecasts"], list)
+    assert len(payload["forecasts"]) > 0
+
+
+def test_saas_forecast_endpoint_returns_forecasts():
+    response = _request(
+        "GET", "/v1/intelligence/forecast", headers=_saas_auth_headers()
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] > 0
+    assert len(payload["forecasts"]) == payload["count"]

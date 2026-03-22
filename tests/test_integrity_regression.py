@@ -13,7 +13,12 @@ def test_procurement_db_core_tables_have_rows():
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
 
-    for table_name in ["suppliers", "materials", "purchase_orders", "quality_incidents"]:
+    for table_name in [
+        "suppliers",
+        "materials",
+        "purchase_orders",
+        "quality_incidents",
+    ]:
         count = cur.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
         assert count > 0
 
@@ -45,4 +50,8 @@ def test_insights_json_contains_regression_guardrails():
     assert insights["total_spend"] > 0
     assert insights["total_savings"] >= 0
     assert 0 <= insights["savings_percentage"] <= 100
-    assert insights["total_savings_p05_ngn"] <= insights["total_savings_median_ngn"] <= insights["total_savings_p95_ngn"]
+    assert (
+        insights["total_savings_p05_ngn"]
+        <= insights["total_savings_median_ngn"]
+        <= insights["total_savings_p95_ngn"]
+    )

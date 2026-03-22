@@ -24,7 +24,12 @@ class TestTenantModel:
         assert len(t.tenant_id) == 32
 
     def test_tenant_limits_from_tier(self):
-        t = Tenant(name="Pro Corp", slug="pro", owner_email="a@b.com", tier=TenantTier.PROFESSIONAL)
+        t = Tenant(
+            name="Pro Corp",
+            slug="pro",
+            owner_email="a@b.com",
+            tier=TenantTier.PROFESSIONAL,
+        )
         limits = t.limits
         assert limits.max_users == TIER_LIMITS[TenantTier.PROFESSIONAL].max_users
         assert limits.sso_enabled is True
@@ -52,6 +57,7 @@ class TestTenantContextVar:
         assert get_current_tenant() == t
         # Reset context var for other tests
         from procurement_spend_analysis.tenant import _current_tenant
+
         _current_tenant.reset(token)
 
     def test_require_raises_when_missing(self):

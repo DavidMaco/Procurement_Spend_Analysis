@@ -46,14 +46,16 @@ class ReconciliationSuite:
         for rule in self._rules:
             passed_mask = rule.check(df)
             failed_idx = df.index[~passed_mask].tolist()
-            reports.append(ReconciliationReport(
-                rule_name=rule.name,
-                total_rows=len(df),
-                passed_rows=int(passed_mask.sum()),
-                failed_rows=int((~passed_mask).sum()),
-                failed_indices=failed_idx,
-                tolerance=rule.tolerance,
-            ))
+            reports.append(
+                ReconciliationReport(
+                    rule_name=rule.name,
+                    total_rows=len(df),
+                    passed_rows=int(passed_mask.sum()),
+                    failed_rows=int((~passed_mask).sum()),
+                    failed_indices=failed_idx,
+                    tolerance=rule.tolerance,
+                )
+            )
         return reports
 
     @staticmethod
@@ -64,7 +66,9 @@ class ReconciliationSuite:
                 "total_rows": r.total_rows,
                 "passed_rows": r.passed_rows,
                 "failed_rows": r.failed_rows,
-                "pass_rate": round(r.passed_rows / r.total_rows, 4) if r.total_rows else 0.0,
+                "pass_rate": round(r.passed_rows / r.total_rows, 4)
+                if r.total_rows
+                else 0.0,
                 "tolerance": r.tolerance,
             }
             for r in reports
@@ -77,6 +81,7 @@ class ReconciliationSuite:
 # ---------------------------------------------------------------------------
 # Pre-registered rules
 # ---------------------------------------------------------------------------
+
 
 def _gross_sales_check(df: pd.DataFrame) -> pd.Series:
     expected = df["units_sold"] * df["list_price"]
@@ -118,32 +123,60 @@ def _stock_on_hand_non_negative(df: pd.DataFrame) -> pd.Series:
 def default_reconciliation_suite() -> ReconciliationSuite:
     """Factory returning a :class:`ReconciliationSuite` with standard FMCG finance rules."""
     suite = ReconciliationSuite()
-    suite.add_rule(ReconciliationRule(
-        "gross_sales_reconciliation", _gross_sales_check, 0.01,
-        "abs(gross_sales − units_sold × list_price) ≤ 0.01",
-    ))
-    suite.add_rule(ReconciliationRule(
-        "net_sales_reconciliation", _net_sales_check, 0.02,
-        "abs(net_sales − gross_sales × (1 − discount_pct)) ≤ 0.02",
-    ))
-    suite.add_rule(ReconciliationRule(
-        "margin_pct_reconciliation", _margin_pct_check, 0.02,
-        "abs(margin_pct − (net_sales − COGS) / net_sales) ≤ 0.02",
-    ))
-    suite.add_rule(ReconciliationRule(
-        "non_negative_units", _non_negative_units, 0.0,
-        "units_sold ≥ 0",
-    ))
-    suite.add_rule(ReconciliationRule(
-        "positive_list_price", _positive_list_price, 0.0,
-        "list_price > 0",
-    ))
-    suite.add_rule(ReconciliationRule(
-        "discount_range", _discount_range, 0.0,
-        "0 ≤ discount_pct ≤ 1",
-    ))
-    suite.add_rule(ReconciliationRule(
-        "stock_on_hand_non_negative", _stock_on_hand_non_negative, 0.0,
-        "stock_on_hand ≥ 0",
-    ))
+    suite.add_rule(
+        ReconciliationRule(
+            "gross_sales_reconciliation",
+            _gross_sales_check,
+            0.01,
+            "abs(gross_sales − units_sold × list_price) ≤ 0.01",
+        )
+    )
+    suite.add_rule(
+        ReconciliationRule(
+            "net_sales_reconciliation",
+            _net_sales_check,
+            0.02,
+            "abs(net_sales − gross_sales × (1 − discount_pct)) ≤ 0.02",
+        )
+    )
+    suite.add_rule(
+        ReconciliationRule(
+            "margin_pct_reconciliation",
+            _margin_pct_check,
+            0.02,
+            "abs(margin_pct − (net_sales − COGS) / net_sales) ≤ 0.02",
+        )
+    )
+    suite.add_rule(
+        ReconciliationRule(
+            "non_negative_units",
+            _non_negative_units,
+            0.0,
+            "units_sold ≥ 0",
+        )
+    )
+    suite.add_rule(
+        ReconciliationRule(
+            "positive_list_price",
+            _positive_list_price,
+            0.0,
+            "list_price > 0",
+        )
+    )
+    suite.add_rule(
+        ReconciliationRule(
+            "discount_range",
+            _discount_range,
+            0.0,
+            "0 ≤ discount_pct ≤ 1",
+        )
+    )
+    suite.add_rule(
+        ReconciliationRule(
+            "stock_on_hand_non_negative",
+            _stock_on_hand_non_negative,
+            0.0,
+            "stock_on_hand ≥ 0",
+        )
+    )
     return suite

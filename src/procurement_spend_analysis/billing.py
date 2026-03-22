@@ -24,6 +24,7 @@ from uuid import uuid4
 # Plans & Pricing
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class BillingInterval(str, Enum):
     MONTHLY = "monthly"
     ANNUAL = "annual"
@@ -124,6 +125,7 @@ PLANS: dict[str, Plan] = {
 # Subscription
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class SubscriptionStatus(str, Enum):
     ACTIVE = "active"
     TRIALING = "trialing"
@@ -156,6 +158,7 @@ class Subscription:
 # Usage Metering
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class UsageMetric(str, Enum):
     API_CALLS = "api_calls"
     UPLOAD_ROWS = "upload_rows"
@@ -185,7 +188,9 @@ class UsageMeter:
         self._records: list[UsageRecord] = []
         self._counters: dict[str, dict[str, int]] = {}  # tenant_id -> metric -> count
 
-    def record(self, tenant_id: str, metric: UsageMetric, value: int = 1) -> UsageRecord:
+    def record(
+        self, tenant_id: str, metric: UsageMetric, value: int = 1
+    ) -> UsageRecord:
         rec = UsageRecord(tenant_id=tenant_id, metric=metric.value, value=value)
         self._records.append(rec)
 
@@ -212,6 +217,7 @@ class UsageMeter:
 # ═══════════════════════════════════════════════════════════════════════════
 # Invoice
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class InvoiceLineItem:
@@ -321,12 +327,14 @@ class BillingService:
         usage = self._meter.get_all_usage(tenant_id)
         for metric_name, count in usage.items():
             if count > 0:
-                line_items.append(InvoiceLineItem(
-                    description=f"{metric_name} usage",
-                    quantity=count,
-                    unit_price_cents=0,  # Included in plan
-                    amount_cents=0,
-                ))
+                line_items.append(
+                    InvoiceLineItem(
+                        description=f"{metric_name} usage",
+                        quantity=count,
+                        unit_price_cents=0,  # Included in plan
+                        amount_cents=0,
+                    )
+                )
 
         subtotal = sum(li.amount_cents for li in line_items)
 

@@ -13,7 +13,9 @@ class SupplierSchema(pa.DataFrameModel):
     category: Series[str] = pa.Field(nullable=False)
     country: Series[str] = pa.Field(nullable=False)
     payment_terms: Series[str] = pa.Field(nullable=False)
-    currency: Series[str] = pa.Field(nullable=False, isin=["NGN", "USD", "EUR", "GBP", "CNY", "INR"])
+    currency: Series[str] = pa.Field(
+        nullable=False, isin=["NGN", "USD", "EUR", "GBP", "CNY", "INR"]
+    )
     quality_rating: Series[float] = pa.Field(ge=0, le=5)
     is_approved: Series[bool] = pa.Field(nullable=False)
     risk_level: Series[str] = pa.Field(nullable=False, isin=["Low", "Medium", "High"])
@@ -58,7 +60,9 @@ class PurchaseOrdersSchema(pa.DataFrameModel):
 
     @pa.dataframe_check
     @classmethod
-    def totals_match_quantity_times_price(cls, df: DataFrame["PurchaseOrdersSchema"]) -> bool:
+    def totals_match_quantity_times_price(
+        cls, df: DataFrame["PurchaseOrdersSchema"]
+    ) -> bool:
         expected = (df["quantity"].fillna(0) * df["unit_price_ngn"].fillna(0)).round(2)
         actual = df["total_amount_ngn"].fillna(expected).round(2)
         return ((actual - expected).abs() <= 5.00).all()
@@ -73,7 +77,9 @@ class QualityIncidentsSchema(pa.DataFrameModel):
     po_number: Series[str] = pa.Field(nullable=True)
     supplier_id: Series[str] = pa.Field(nullable=True)
     incident_type: Series[str] = pa.Field(nullable=False)
-    severity: Series[str] = pa.Field(nullable=False, isin=["Low", "Medium", "High", "Critical"])
+    severity: Series[str] = pa.Field(
+        nullable=False, isin=["Low", "Medium", "High", "Critical"]
+    )
     cost_impact_ngn: Series[float] = pa.Field(ge=0)
 
     class Config:
@@ -87,7 +93,11 @@ def validate_canonical_tables(tables: Mapping[str, object]) -> dict[str, object]
     validated = {
         "suppliers": SupplierSchema.validate(tables["suppliers"], lazy=True),
         "materials": MaterialsSchema.validate(tables["materials"], lazy=True),
-        "purchase_orders": PurchaseOrdersSchema.validate(tables["purchase_orders"], lazy=True),
-        "quality_incidents": QualityIncidentsSchema.validate(tables["quality_incidents"], lazy=True),
+        "purchase_orders": PurchaseOrdersSchema.validate(
+            tables["purchase_orders"], lazy=True
+        ),
+        "quality_incidents": QualityIncidentsSchema.validate(
+            tables["quality_incidents"], lazy=True
+        ),
     }
     return validated

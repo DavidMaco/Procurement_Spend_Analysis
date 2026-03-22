@@ -18,6 +18,7 @@ from procurement_spend_analysis.compliance import (
 
 # ── PII Masking ──────────────────────────────────────────────────────────
 
+
 class TestMaskPII:
     def test_mask_email(self):
         assert "REDACTED_EMAIL" in mask_pii("Contact: admin@example.com for details")
@@ -54,6 +55,7 @@ class TestClassifyField:
 
 # ── Audit Logger ─────────────────────────────────────────────────────────
 
+
 class TestAuditLogger:
     def test_log_entry(self):
         logger = AuditLogger()
@@ -89,6 +91,7 @@ class TestAuditLogger:
 
 
 # ── GDPR Service ─────────────────────────────────────────────────────────
+
 
 class TestGDPRService:
     def setup_method(self):
@@ -130,6 +133,7 @@ class TestGDPRService:
 
 # ── Encryption Service ───────────────────────────────────────────────────
 
+
 class TestEncryptionService:
     def test_encrypt_decrypt_roundtrip(self):
         svc = EncryptionService()
@@ -148,11 +152,21 @@ class TestEncryptionService:
     def test_wrong_context_fails_integrity(self):
         svc = EncryptionService()
         ct = svc.encrypt("secret", context="correct")
-        with pytest.raises((ValueError, UnicodeDecodeError)):
+        with pytest.raises(ValueError, match="integrity check failed"):
             svc.decrypt(ct, context="wrong")
+
+    def test_tampered_ciphertext_fails_integrity(self):
+        svc = EncryptionService()
+        ciphertext = svc.encrypt("secret", context="ctx")
+        tampered = ciphertext[:-2] + ("AA" if ciphertext[-2:] != "AA" else "BB")
+        with pytest.raises(
+            ValueError, match="integrity check failed|invalid ciphertext encoding"
+        ):
+            svc.decrypt(tampered, context="ctx")
 
 
 # ── Compliance Checker ───────────────────────────────────────────────────
+
 
 class TestComplianceChecker:
     def test_assess_all(self):

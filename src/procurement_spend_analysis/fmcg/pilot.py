@@ -36,14 +36,16 @@ def profile_data_completeness(df: pd.DataFrame) -> pd.DataFrame:
     partition.
     """
     countries = df.groupby("country").apply(
-        lambda g: pd.Series({
-            "row_count": len(g),
-            "completeness": 1.0 - g.isna().sum().sum() / (len(g) * len(g.columns)),
-            "n_stores": g["store_id"].nunique(),
-            "n_categories": g["category"].nunique(),
-            "date_min": str(g["date"].min()),
-            "date_max": str(g["date"].max()),
-        }),
+        lambda g: pd.Series(
+            {
+                "row_count": len(g),
+                "completeness": 1.0 - g.isna().sum().sum() / (len(g) * len(g.columns)),
+                "n_stores": g["store_id"].nunique(),
+                "n_categories": g["category"].nunique(),
+                "date_min": str(g["date"].min()),
+                "date_max": str(g["date"].max()),
+            }
+        ),
         include_groups=False,
     )
     return countries.reset_index()
@@ -74,7 +76,9 @@ def select_pilot_cohort(
         eligible = profile.sort_values("completeness", ascending=False)
 
     # Best country: highest completeness then row_count
-    best = eligible.sort_values(["completeness", "row_count"], ascending=[False, False]).iloc[0]
+    best = eligible.sort_values(
+        ["completeness", "row_count"], ascending=[False, False]
+    ).iloc[0]
     country: str = best["country"]
 
     # Categories within the chosen country

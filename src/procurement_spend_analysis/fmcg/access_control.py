@@ -61,39 +61,45 @@ class User(BaseModel):
 
 ROLE_VIEWER = Role(
     name="viewer",
-    permissions=frozenset({
-        Permission.VIEW_COMMERCIAL_DASHBOARD,
-        Permission.VIEW_PROCUREMENT_DASHBOARD,
-        Permission.VIEW_KPI_CATALOG,
-        Permission.VIEW_ALERTS,
-    }),
+    permissions=frozenset(
+        {
+            Permission.VIEW_COMMERCIAL_DASHBOARD,
+            Permission.VIEW_PROCUREMENT_DASHBOARD,
+            Permission.VIEW_KPI_CATALOG,
+            Permission.VIEW_ALERTS,
+        }
+    ),
     description="Read-only access to dashboards and KPIs",
 )
 
 ROLE_ANALYST = Role(
     name="analyst",
-    permissions=frozenset({
-        Permission.VIEW_COMMERCIAL_DASHBOARD,
-        Permission.VIEW_PROCUREMENT_DASHBOARD,
-        Permission.VIEW_KPI_CATALOG,
-        Permission.VIEW_ALERTS,
-        Permission.VIEW_EVENT_LOG,
-        Permission.UPLOAD_DATA,
-    }),
+    permissions=frozenset(
+        {
+            Permission.VIEW_COMMERCIAL_DASHBOARD,
+            Permission.VIEW_PROCUREMENT_DASHBOARD,
+            Permission.VIEW_KPI_CATALOG,
+            Permission.VIEW_ALERTS,
+            Permission.VIEW_EVENT_LOG,
+            Permission.UPLOAD_DATA,
+        }
+    ),
     description="Viewer + data upload and event log access",
 )
 
 ROLE_APPROVER = Role(
     name="approver",
-    permissions=frozenset({
-        Permission.VIEW_COMMERCIAL_DASHBOARD,
-        Permission.VIEW_PROCUREMENT_DASHBOARD,
-        Permission.VIEW_KPI_CATALOG,
-        Permission.VIEW_ALERTS,
-        Permission.VIEW_EVENT_LOG,
-        Permission.APPROVE_RECOMMENDATION,
-        Permission.REJECT_RECOMMENDATION,
-    }),
+    permissions=frozenset(
+        {
+            Permission.VIEW_COMMERCIAL_DASHBOARD,
+            Permission.VIEW_PROCUREMENT_DASHBOARD,
+            Permission.VIEW_KPI_CATALOG,
+            Permission.VIEW_ALERTS,
+            Permission.VIEW_EVENT_LOG,
+            Permission.APPROVE_RECOMMENDATION,
+            Permission.REJECT_RECOMMENDATION,
+        }
+    ),
     description="Can approve or reject recommendations",
 )
 
@@ -130,6 +136,7 @@ def build_scoped_access_control(
 # ---------------------------------------------------------------------------
 # Access-control service
 # ---------------------------------------------------------------------------
+
 
 class AccessControlService:
     """In-memory RBAC registry.

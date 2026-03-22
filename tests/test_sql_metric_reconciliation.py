@@ -16,11 +16,15 @@ def _load_insights() -> dict:
 
 def test_sql_total_spend_reconciles_with_insights_json():
     conn = sqlite3.connect(PROJECT_ROOT / "procurement.db")
-    sql_total_spend = conn.execute("SELECT ROUND(SUM(total_amount_ngn), 0) FROM purchase_orders").fetchone()[0]
+    sql_total_spend = conn.execute(
+        "SELECT ROUND(SUM(total_amount_ngn), 0) FROM purchase_orders"
+    ).fetchone()[0]
     conn.close()
 
     insights = _load_insights()
-    assert float(sql_total_spend) == pytest.approx(float(insights["total_spend"]), abs=1.0)
+    assert float(sql_total_spend) == pytest.approx(
+        float(insights["total_spend"]), abs=1.0
+    )
 
 
 def test_sql_maverick_spend_reconciles_with_insights_json():
@@ -36,7 +40,9 @@ def test_sql_maverick_spend_reconciles_with_insights_json():
     conn.close()
 
     insights = _load_insights()
-    assert float(sql_maverick_spend) == pytest.approx(float(insights["maverick_spend"]), abs=1.0)
+    assert float(sql_maverick_spend) == pytest.approx(
+        float(insights["maverick_spend"]), abs=1.0
+    )
 
 
 def test_sql_price_standardization_reconciles_with_insights_json():

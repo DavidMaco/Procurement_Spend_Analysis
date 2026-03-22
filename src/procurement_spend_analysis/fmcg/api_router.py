@@ -21,7 +21,10 @@ from procurement_spend_analysis.fmcg.kpi_catalog import default_kpi_catalog
 from procurement_spend_analysis.fmcg.metrics import default_metrics_layer
 from procurement_spend_analysis.fmcg.models import validate_fmcg_dataframe
 from procurement_spend_analysis.fmcg.pilot import PilotCohort, select_pilot_cohort
-from procurement_spend_analysis.fmcg.reconciliation import ReconciliationSuite, default_reconciliation_suite
+from procurement_spend_analysis.fmcg.reconciliation import (
+    ReconciliationSuite,
+    default_reconciliation_suite,
+)
 from procurement_spend_analysis.fmcg.variance_alerts import default_variance_engine
 
 router = APIRouter(prefix="/fmcg", tags=["fmcg"])
@@ -53,6 +56,7 @@ class RecommendationArchiveRequest(BaseModel):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 async def _read_upload(file: UploadFile) -> pd.DataFrame:
     """Read an uploaded CSV into a DataFrame with safety limits."""
     content = await file.read()
@@ -67,7 +71,9 @@ async def _read_upload(file: UploadFile) -> pd.DataFrame:
     df.columns = [c.strip() for c in df.columns]
 
     if len(df) > _MAX_ROWS:
-        raise HTTPException(status_code=413, detail=f"File exceeds {_MAX_ROWS} row limit")
+        raise HTTPException(
+            status_code=413, detail=f"File exceeds {_MAX_ROWS} row limit"
+        )
     return df
 
 
@@ -98,6 +104,7 @@ def require_permission(permission: Permission):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post("/validate")
 async def validate_upload(
@@ -178,7 +185,9 @@ async def run_pilot_selection(
     try:
         validate_fmcg_dataframe(df)
     except Exception as exc:
-        raise HTTPException(status_code=422, detail=f"Schema validation failed: {exc}") from exc
+        raise HTTPException(
+            status_code=422, detail=f"Schema validation failed: {exc}"
+        ) from exc
 
     cohort: PilotCohort = select_pilot_cohort(df)
     return cohort.model_dump()
@@ -275,6 +284,19 @@ def get_recommendation_event_stats(
     return _EVENT_LOG.stats()
 
 
+@router.get("/events/integrity")
+def get_recommendation_event_integrity(
+    limit: int = 25,
+    _: Annotated[str, Depends(require_permission(Permission.VIEW_AUDIT_LOG))] = "",
+) -> dict[str, Any]:
+    """Return a recent chain-inspection report for the recommendation ledger."""
+    if limit < 0:
+        raise HTTPException(
+            status_code=422, detail="limit must be greater than or equal to zero"
+        )
+    return _EVENT_LOG.integrity_report(limit=limit)
+
+
 @router.post("/events/compact")
 def compact_recommendation_event_log(
     _: Annotated[str, Depends(require_permission(Permission.VIEW_AUDIT_LOG))] = "",
@@ -308,7 +330,9 @@ def get_recommendation_history(
 def approve_recommendation(
     event_id: str,
     payload: RecommendationDecisionRequest,
-    _: Annotated[str, Depends(require_permission(Permission.APPROVE_RECOMMENDATION))] = "",
+    _: Annotated[
+        str, Depends(require_permission(Permission.APPROVE_RECOMMENDATION))
+    ] = "",
 ) -> dict[str, Any]:
     """Append an approval decision event for a recommendation."""
     try:
@@ -324,7 +348,9 @@ def approve_recommendation(
 def reject_recommendation(
     event_id: str,
     payload: RecommendationDecisionRequest,
-    _: Annotated[str, Depends(require_permission(Permission.REJECT_RECOMMENDATION))] = "",
+    _: Annotated[
+        str, Depends(require_permission(Permission.REJECT_RECOMMENDATION))
+    ] = "",
 ) -> dict[str, Any]:
     """Append a rejection decision event for a recommendation."""
     try:

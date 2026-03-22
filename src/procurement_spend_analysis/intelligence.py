@@ -37,6 +37,7 @@ from scipy import stats as scipy_stats
 # 1. SPEND ANOMALY DETECTION (Statistical Process Control + ML)
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class AnomalyMethod(str, Enum):
     ZSCORE = "zscore"
     IQR = "iqr"
@@ -109,12 +110,20 @@ class SpendAnomalyDetector:
         candidates = []
         for col in df.columns:
             lower = col.lower()
-            if any(kw in lower for kw in ("amount", "price", "cost", "spend", "total", "value")):
+            if any(
+                kw in lower
+                for kw in ("amount", "price", "cost", "spend", "total", "value")
+            ):
                 if pd.api.types.is_numeric_dtype(df[col]):
                     candidates.append(col)
-        return candidates or [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])][:3]
+        return (
+            candidates
+            or [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])][:3]
+        )
 
-    def _zscore_detect(self, df: pd.DataFrame, columns: list[str]) -> list[SpendAnomaly]:
+    def _zscore_detect(
+        self, df: pd.DataFrame, columns: list[str]
+    ) -> list[SpendAnomaly]:
         results: list[SpendAnomaly] = []
         for col in columns:
             series = pd.to_numeric(df[col], errors="coerce").dropna()
@@ -125,16 +134,22 @@ class SpendAnomalyDetector:
                 actual_idx = series.index[idx]
                 val = float(series.iloc[idx])
                 mean = float(series.mean())
-                results.append(SpendAnomaly(
-                    anomaly_id=uuid4().hex[:12],
-                    record_index=int(actual_idx),
-                    anomaly_score=min(1.0, float(zscores[idx]) / (self._zscore_threshold * 2)),
-                    method="zscore",
-                    features_used=[col],
-                    explanation=f"{col}={val:,.2f} is {zscores[idx]:.1f} std devs from mean ({mean:,.2f})",
-                    severity=self._score_to_severity(float(zscores[idx]) / (self._zscore_threshold * 2)),
-                    estimated_impact=abs(val - mean),
-                ))
+                results.append(
+                    SpendAnomaly(
+                        anomaly_id=uuid4().hex[:12],
+                        record_index=int(actual_idx),
+                        anomaly_score=min(
+                            1.0, float(zscores[idx]) / (self._zscore_threshold * 2)
+                        ),
+                        method="zscore",
+                        features_used=[col],
+                        explanation=f"{col}={val:,.2f} is {zscores[idx]:.1f} std devs from mean ({mean:,.2f})",
+                        severity=self._score_to_severity(
+                            float(zscores[idx]) / (self._zscore_threshold * 2)
+                        ),
+                        estimated_impact=abs(val - mean),
+                    )
+                )
         return results
 
     def _iqr_detect(self, df: pd.DataFrame, columns: list[str]) -> list[SpendAnomaly]:
@@ -147,23 +162,30 @@ class SpendAnomalyDetector:
             iqr = q3 - q1
             if iqr == 0:
                 continue
-            lower, upper = q1 - self._iqr_multiplier * iqr, q3 + self._iqr_multiplier * iqr
+            lower, upper = (
+                q1 - self._iqr_multiplier * iqr,
+                q3 + self._iqr_multiplier * iqr,
+            )
             outliers = series[(series < lower) | (series > upper)]
             for idx, val in outliers.items():
                 distance = max(abs(val - lower), abs(val - upper)) / iqr if iqr else 0
-                results.append(SpendAnomaly(
-                    anomaly_id=uuid4().hex[:12],
-                    record_index=int(idx),
-                    anomaly_score=min(1.0, distance / 5.0),
-                    method="iqr",
-                    features_used=[col],
-                    explanation=f"{col}={val:,.2f} outside IQR bounds [{lower:,.2f}, {upper:,.2f}]",
-                    severity=self._score_to_severity(distance / 5.0),
-                    estimated_impact=abs(float(val) - float(series.median())),
-                ))
+                results.append(
+                    SpendAnomaly(
+                        anomaly_id=uuid4().hex[:12],
+                        record_index=int(idx),
+                        anomaly_score=min(1.0, distance / 5.0),
+                        method="iqr",
+                        features_used=[col],
+                        explanation=f"{col}={val:,.2f} outside IQR bounds [{lower:,.2f}, {upper:,.2f}]",
+                        severity=self._score_to_severity(distance / 5.0),
+                        estimated_impact=abs(float(val) - float(series.median())),
+                    )
+                )
         return results
 
-    def _isolation_forest_detect(self, df: pd.DataFrame, columns: list[str]) -> list[SpendAnomaly]:
+    def _isolation_forest_detect(
+        self, df: pd.DataFrame, columns: list[str]
+    ) -> list[SpendAnomaly]:
         from sklearn.ensemble import IsolationForest
 
         numeric = df[columns].apply(pd.to_numeric, errors="coerce").fillna(0)
@@ -183,16 +205,18 @@ class SpendAnomalyDetector:
             explanation = ", ".join(f"{k}={v:,.2f}" for k, v in row_vals.items())
             median_total = sum(float(numeric[c].median()) for c in columns)
             actual_total = sum(row_vals.values())
-            results.append(SpendAnomaly(
-                anomaly_id=uuid4().hex[:12],
-                record_index=int(numeric.index[idx]),
-                anomaly_score=normalized,
-                method="isolation_forest",
-                features_used=columns,
-                explanation=f"ML anomaly: {explanation}",
-                severity=self._score_to_severity(normalized),
-                estimated_impact=abs(actual_total - median_total),
-            ))
+            results.append(
+                SpendAnomaly(
+                    anomaly_id=uuid4().hex[:12],
+                    record_index=int(numeric.index[idx]),
+                    anomaly_score=normalized,
+                    method="isolation_forest",
+                    features_used=columns,
+                    explanation=f"ML anomaly: {explanation}",
+                    severity=self._score_to_severity(normalized),
+                    estimated_impact=abs(actual_total - median_total),
+                )
+            )
         return results
 
     @staticmethod
@@ -208,16 +232,18 @@ class SpendAnomalyDetector:
             methods = sorted(set(a.method for a in group))
             # Boost score for multi-method consensus
             boost = min(1.0, best.anomaly_score * (1 + 0.2 * (len(methods) - 1)))
-            merged.append(SpendAnomaly(
-                anomaly_id=best.anomaly_id,
-                record_index=row_idx,
-                anomaly_score=boost,
-                method="+".join(methods),
-                features_used=list(set(f for a in group for f in a.features_used)),
-                explanation=f"[{', '.join(methods)}] " + best.explanation,
-                severity=SpendAnomalyDetector._score_to_severity(boost),
-                estimated_impact=max(a.estimated_impact for a in group),
-            ))
+            merged.append(
+                SpendAnomaly(
+                    anomaly_id=best.anomaly_id,
+                    record_index=row_idx,
+                    anomaly_score=boost,
+                    method="+".join(methods),
+                    features_used=list(set(f for a in group for f in a.features_used)),
+                    explanation=f"[{', '.join(methods)}] " + best.explanation,
+                    severity=SpendAnomalyDetector._score_to_severity(boost),
+                    estimated_impact=max(a.estimated_impact for a in group),
+                )
+            )
         return merged
 
     @staticmethod
@@ -234,6 +260,7 @@ class SpendAnomalyDetector:
 # ═══════════════════════════════════════════════════════════════════════════
 # 2. DEMAND FORECASTING ENGINE (Ensemble: Decomposition + GBM)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class ForecastResult:
@@ -257,7 +284,9 @@ class DemandForecastEngine:
     3. Blend predictions with confidence intervals.
     """
 
-    def __init__(self, forecast_periods: int = 6, confidence_level: float = 0.95) -> None:
+    def __init__(
+        self, forecast_periods: int = 6, confidence_level: float = 0.95
+    ) -> None:
         self._periods = forecast_periods
         self._confidence = confidence_level
 
@@ -345,32 +374,43 @@ class DemandForecastEngine:
 
         for step in range(1, self._periods + 1):
             next_period = last_period + pd.offsets.MonthBegin(step)
-            future_features = pd.DataFrame([{
-                "month": next_period.month,
-                "quarter": next_period.quarter,
-                "month_sin": math.sin(2 * math.pi * next_period.month / 12),
-                "month_cos": math.cos(2 * math.pi * next_period.month / 12),
-                "idx": len(series) + step - 1,
-                "lag_1": last_vals[-1] if last_vals else 0,
-                "lag_2": last_vals[-2] if len(last_vals) >= 2 else last_vals[-1],
-                "lag_3": last_vals[-3] if len(last_vals) >= 3 else last_vals[0],
-                "rolling_3": float(np.mean(last_vals[-3:])),
-                "rolling_6": float(np.mean(last_vals[-6:])),
-                "expanding_mean": float(np.mean(list(series) + last_vals)),
-            }])
+            future_features = pd.DataFrame(
+                [
+                    {
+                        "month": next_period.month,
+                        "quarter": next_period.quarter,
+                        "month_sin": math.sin(2 * math.pi * next_period.month / 12),
+                        "month_cos": math.cos(2 * math.pi * next_period.month / 12),
+                        "idx": len(series) + step - 1,
+                        "lag_1": last_vals[-1] if last_vals else 0,
+                        "lag_2": last_vals[-2]
+                        if len(last_vals) >= 2
+                        else last_vals[-1],
+                        "lag_3": last_vals[-3] if len(last_vals) >= 3 else last_vals[0],
+                        "rolling_3": float(np.mean(last_vals[-3:])),
+                        "rolling_6": float(np.mean(last_vals[-6:])),
+                        "expanding_mean": float(np.mean(list(series) + last_vals)),
+                    }
+                ]
+            )
             pred = max(0.0, float(model.predict(future_features)[0]))
             margin = z * residual_std * math.sqrt(step)
             last_vals.append(pred)
 
-            results.append(ForecastResult(
-                category=group_name,
-                period=next_period.strftime("%Y-%m"),
-                point_forecast=round(pred, 2),
-                lower_bound=round(max(0.0, pred - margin), 2),
-                upper_bound=round(pred + margin, 2),
-                model_used="gradient_boosting_ensemble",
-                features_importance={k: round(v, 4) for k, v in sorted(importances.items(), key=lambda x: -x[1])[:5]},
-            ))
+            results.append(
+                ForecastResult(
+                    category=group_name,
+                    period=next_period.strftime("%Y-%m"),
+                    point_forecast=round(pred, 2),
+                    lower_bound=round(max(0.0, pred - margin), 2),
+                    upper_bound=round(pred + margin, 2),
+                    model_used="gradient_boosting_ensemble",
+                    features_importance={
+                        k: round(v, 4)
+                        for k, v in sorted(importances.items(), key=lambda x: -x[1])[:5]
+                    },
+                )
+            )
 
         return results
 
@@ -397,14 +437,16 @@ class DemandForecastEngine:
         for step in range(1, self._periods + 1):
             next_period = last_period + pd.offsets.MonthBegin(step)
             margin = z * std * math.sqrt(step)
-            results.append(ForecastResult(
-                category=group_name,
-                period=next_period.strftime("%Y-%m"),
-                point_forecast=round(max(0.0, smoothed), 2),
-                lower_bound=round(max(0.0, smoothed - margin), 2),
-                upper_bound=round(smoothed + margin, 2),
-                model_used="exponential_smoothing_fallback",
-            ))
+            results.append(
+                ForecastResult(
+                    category=group_name,
+                    period=next_period.strftime("%Y-%m"),
+                    point_forecast=round(max(0.0, smoothed), 2),
+                    lower_bound=round(max(0.0, smoothed - margin), 2),
+                    upper_bound=round(smoothed + margin, 2),
+                    model_used="exponential_smoothing_fallback",
+                )
+            )
 
         return results
 
@@ -412,6 +454,7 @@ class DemandForecastEngine:
 # ═══════════════════════════════════════════════════════════════════════════
 # 3. SUPPLIER RISK INTELLIGENCE
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class RiskDimension(str, Enum):
     FINANCIAL = "financial"
@@ -484,7 +527,9 @@ class SupplierRiskEngine:
             actions: list[str] = []
 
             # Financial risk: payment terms, spend volatility
-            dims["financial"] = self._financial_risk(supplier, supplier_pos, factors, actions)
+            dims["financial"] = self._financial_risk(
+                supplier, supplier_pos, factors, actions
+            )
 
             # Operational risk: delivery performance
             dims["operational"] = self._operational_risk(supplier_pos, factors, actions)
@@ -506,19 +551,20 @@ class SupplierRiskEngine:
             )
 
             overall = sum(
-                dims.get(d, 50) * self._weights.get(d, 0)
-                for d in self._weights
+                dims.get(d, 50) * self._weights.get(d, 0) for d in self._weights
             )
 
-            results.append(SupplierRiskScore(
-                supplier_id=sid,
-                supplier_name=sname,
-                overall_score=round(min(100, max(0, overall)), 1),
-                risk_grade=self._score_to_grade(overall),
-                dimension_scores={k: round(v, 1) for k, v in dims.items()},
-                risk_factors=factors,
-                mitigation_actions=actions,
-            ))
+            results.append(
+                SupplierRiskScore(
+                    supplier_id=sid,
+                    supplier_name=sname,
+                    overall_score=round(min(100, max(0, overall)), 1),
+                    risk_grade=self._score_to_grade(overall),
+                    dimension_scores={k: round(v, 1) for k, v in dims.items()},
+                    risk_factors=factors,
+                    mitigation_actions=actions,
+                )
+            )
 
         return sorted(results, key=lambda r: r.overall_score, reverse=True)
 
@@ -531,7 +577,9 @@ class SupplierRiskEngine:
     ) -> float:
         score = 30.0  # baseline
 
-        spend = pd.to_numeric(pos.get("total_amount_ngn", pd.Series(dtype=float)), errors="coerce")
+        spend = pd.to_numeric(
+            pos.get("total_amount_ngn", pd.Series(dtype=float)), errors="coerce"
+        )
         if len(spend) > 3:
             cv = float(spend.std() / spend.mean()) if spend.mean() > 0 else 0
             if cv > 0.5:
@@ -597,7 +645,9 @@ class SupplierRiskEngine:
                 actions.append("Schedule quarterly quality review")
 
             if "severity" in supplier_incidents.columns:
-                critical = (supplier_incidents["severity"].str.lower() == "critical").sum()
+                critical = (
+                    supplier_incidents["severity"].str.lower() == "critical"
+                ).sum()
                 if critical > 0:
                     score += 20
                     factors.append(f"{critical} CRITICAL severity incidents")
@@ -661,6 +711,7 @@ class SupplierRiskEngine:
 # 4. NATURAL LANGUAGE INSIGHT GENERATOR (Template NLG)
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 @dataclass
 class NLInsight:
     """A single natural-language insight with source attribution."""
@@ -718,7 +769,10 @@ class InsightGenerator:
         if category_spend is None:
             return None
 
-        if isinstance(category_spend, pd.DataFrame) and "total_amount_ngn" in category_spend.columns:
+        if (
+            isinstance(category_spend, pd.DataFrame)
+            and "total_amount_ngn" in category_spend.columns
+        ):
             top = category_spend.nlargest(1, "total_amount_ngn")
             if not top.empty:
                 cat_name = str(top.iloc[0].get("category", "Unknown"))
@@ -831,7 +885,12 @@ class InsightGenerator:
     def _forecast_insight(ctx: dict[str, Any]) -> Optional[NLInsight]:
         forecasts = ctx.get("forecasts")
         if forecasts and isinstance(forecasts, list) and len(forecasts) > 0:
-            total_forecast = sum(f.get("point_forecast", 0) if isinstance(f, dict) else getattr(f, "point_forecast", 0) for f in forecasts)
+            total_forecast = sum(
+                f.get("point_forecast", 0)
+                if isinstance(f, dict)
+                else getattr(f, "point_forecast", 0)
+                for f in forecasts
+            )
             return NLInsight(
                 insight_id=uuid4().hex[:12],
                 category="forecast",
@@ -851,6 +910,7 @@ class InsightGenerator:
 # ═══════════════════════════════════════════════════════════════════════════
 # 5. SAVINGS OPPORTUNITY GRAPH
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 @dataclass
 class SavingsOpportunity:
@@ -896,22 +956,24 @@ class SavingsOpportunityFinder:
                 ).sum()
                 estimated_savings = total_spend * 0.08  # Industry benchmark: 5-12%
                 effort = 1.5  # medium effort factor
-                results.append(SavingsOpportunity(
-                    opportunity_id=uuid4().hex[:12],
-                    category="consolidation",
-                    title=f"Consolidate {cat} suppliers ({suppliers} -> 2-3)",
-                    description=(
-                        f"{cat} is sourced from {suppliers} suppliers. "
-                        f"Consolidating to 2-3 strategic suppliers could yield "
-                        f"volume discounts of 5-12% on a {total_spend:,.0f} spend base."
-                    ),
-                    estimated_savings=round(estimated_savings, 2),
-                    confidence=0.7,
-                    effort_level="medium",
-                    affected_suppliers=cat_df["supplier_id"].unique().tolist()[:10],
-                    affected_categories=[str(cat)],
-                    priority_score=round(estimated_savings * 0.7 / effort, 2),
-                ))
+                results.append(
+                    SavingsOpportunity(
+                        opportunity_id=uuid4().hex[:12],
+                        category="consolidation",
+                        title=f"Consolidate {cat} suppliers ({suppliers} -> 2-3)",
+                        description=(
+                            f"{cat} is sourced from {suppliers} suppliers. "
+                            f"Consolidating to 2-3 strategic suppliers could yield "
+                            f"volume discounts of 5-12% on a {total_spend:,.0f} spend base."
+                        ),
+                        estimated_savings=round(estimated_savings, 2),
+                        confidence=0.7,
+                        effort_level="medium",
+                        affected_suppliers=cat_df["supplier_id"].unique().tolist()[:10],
+                        affected_categories=[str(cat)],
+                        priority_score=round(estimated_savings * 0.7 / effort, 2),
+                    )
+                )
         return results
 
     def _find_price_variance(self, pos: pd.DataFrame) -> list[SavingsOpportunity]:
@@ -919,7 +981,9 @@ class SavingsOpportunityFinder:
         if "material_id" not in pos.columns or "unit_price_ngn" not in pos.columns:
             return results
 
-        price_cols = pd.to_numeric(pos.get("unit_price_ngn", pd.Series(dtype=float)), errors="coerce")
+        price_cols = pd.to_numeric(
+            pos.get("unit_price_ngn", pd.Series(dtype=float)), errors="coerce"
+        )
         pos = pos.copy()
         pos["_unit_price"] = price_cols
 
@@ -932,26 +996,38 @@ class SavingsOpportunityFinder:
                 continue
             variance_pct = (max_price - min_price) / min_price * 100
             if variance_pct > 20:
-                qty = pd.to_numeric(mat_df.get("quantity", pd.Series(dtype=float)), errors="coerce").sum()
+                qty = pd.to_numeric(
+                    mat_df.get("quantity", pd.Series(dtype=float)), errors="coerce"
+                ).sum()
                 savings = float(qty * (prices.mean() - min_price))
-                mat_name = str(mat_df["material_name"].iloc[0]) if "material_name" in mat_df.columns else str(mat)
-                results.append(SavingsOpportunity(
-                    opportunity_id=uuid4().hex[:12],
-                    category="renegotiation",
-                    title=f"Standardise pricing for {mat_name}",
-                    description=(
-                        f"Price variance of {variance_pct:.0f}% detected "
-                        f"(range: {min_price:,.2f}–{max_price:,.2f}). "
-                        f"Negotiating all purchases to the best observed price "
-                        f"could save {savings:,.0f}."
-                    ),
-                    estimated_savings=round(savings, 2),
-                    confidence=0.85,
-                    effort_level="low",
-                    affected_suppliers=mat_df["supplier_id"].unique().tolist()[:5] if "supplier_id" in mat_df.columns else [],
-                    affected_categories=mat_df["category"].unique().tolist()[:3] if "category" in mat_df.columns else [],
-                    priority_score=round(savings * 0.85 / 1.0, 2),
-                ))
+                mat_name = (
+                    str(mat_df["material_name"].iloc[0])
+                    if "material_name" in mat_df.columns
+                    else str(mat)
+                )
+                results.append(
+                    SavingsOpportunity(
+                        opportunity_id=uuid4().hex[:12],
+                        category="renegotiation",
+                        title=f"Standardise pricing for {mat_name}",
+                        description=(
+                            f"Price variance of {variance_pct:.0f}% detected "
+                            f"(range: {min_price:,.2f}–{max_price:,.2f}). "
+                            f"Negotiating all purchases to the best observed price "
+                            f"could save {savings:,.0f}."
+                        ),
+                        estimated_savings=round(savings, 2),
+                        confidence=0.85,
+                        effort_level="low",
+                        affected_suppliers=mat_df["supplier_id"].unique().tolist()[:5]
+                        if "supplier_id" in mat_df.columns
+                        else [],
+                        affected_categories=mat_df["category"].unique().tolist()[:3]
+                        if "category" in mat_df.columns
+                        else [],
+                        priority_score=round(savings * 0.85 / 1.0, 2),
+                    )
+                )
         return results[:20]
 
     def _find_timing_optimization(self, pos: pd.DataFrame) -> list[SavingsOpportunity]:
@@ -975,21 +1051,23 @@ class SavingsOpportunityFinder:
             total_spend = pd.to_numeric(
                 pos.get("total_amount_ngn", pd.Series(dtype=float)), errors="coerce"
             ).sum()
-            results.append(SavingsOpportunity(
-                opportunity_id=uuid4().hex[:12],
-                category="timing",
-                title="Smooth procurement timing to reduce rush charges",
-                description=(
-                    f"Order volume peaks in month {peak_month} at {ratio:.1f}x "
-                    f"the trough (month {trough_month}). Redistributing orders "
-                    f"more evenly could reduce expediting fees and negotiate "
-                    f"better terms with advanced purchasing commitments."
-                ),
-                estimated_savings=round(total_spend * 0.02, 2),
-                confidence=0.6,
-                effort_level="medium",
-                affected_suppliers=[],
-                affected_categories=[],
-                priority_score=round(total_spend * 0.02 * 0.6 / 1.5, 2),
-            ))
+            results.append(
+                SavingsOpportunity(
+                    opportunity_id=uuid4().hex[:12],
+                    category="timing",
+                    title="Smooth procurement timing to reduce rush charges",
+                    description=(
+                        f"Order volume peaks in month {peak_month} at {ratio:.1f}x "
+                        f"the trough (month {trough_month}). Redistributing orders "
+                        f"more evenly could reduce expediting fees and negotiate "
+                        f"better terms with advanced purchasing commitments."
+                    ),
+                    estimated_savings=round(total_spend * 0.02, 2),
+                    confidence=0.6,
+                    effort_level="medium",
+                    affected_suppliers=[],
+                    affected_categories=[],
+                    priority_score=round(total_spend * 0.02 * 0.6 / 1.5, 2),
+                )
+            )
         return results

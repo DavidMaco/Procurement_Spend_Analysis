@@ -91,7 +91,9 @@ class AuditAction(str, Enum):
 @dataclass(frozen=True)
 class AuditEntry:
     entry_id: str = field(default_factory=lambda: uuid.uuid4().hex)
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    timestamp: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     action: str = ""
     actor_id: str = ""
     tenant_id: str = ""
@@ -184,7 +186,9 @@ class DSARRequest:
     subject_email: str = ""
     request_type: str = "access"  # access | erasure | portability | rectification
     status: str = "pending"  # pending | processing | completed | denied
-    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     completed_at: str | None = None
     data_collected: dict[str, Any] = field(default_factory=dict)
 
@@ -240,7 +244,9 @@ class GDPRService:
             raise ValueError("Request is not an erasure request")
         req.status = "processing"
         # In production: delete subject data from all stores
-        req.data_collected = {"erased_stores": ["profiles", "activity_log", "exports", "analytics"]}
+        req.data_collected = {
+            "erased_stores": ["profiles", "activity_log", "exports", "analytics"]
+        }
         req.status = "completed"
         req.completed_at = datetime.now(timezone.utc).isoformat()
         self._audit.log(
@@ -351,19 +357,27 @@ class ComplianceChecker:
             ctrl.last_assessed = now
             if ctrl.control_id == "CC5.1":
                 ctrl.status = "compliant"
-                ctrl.evidence = "JWT + API key authentication enforced on all /v1/ endpoints"
+                ctrl.evidence = (
+                    "JWT + API key authentication enforced on all /v1/ endpoints"
+                )
             elif ctrl.control_id == "CC5.2":
                 ctrl.status = "compliant"
-                ctrl.evidence = "RBAC with 4 roles and 12 permissions enforced via middleware"
+                ctrl.evidence = (
+                    "RBAC with 4 roles and 12 permissions enforced via middleware"
+                )
             elif ctrl.control_id == "CC5.3":
                 ctrl.status = "compliant"
-                ctrl.evidence = "API keys stored as SHA-256 hashes; raw keys never persisted"
+                ctrl.evidence = (
+                    "API keys stored as SHA-256 hashes; raw keys never persisted"
+                )
             elif ctrl.control_id == "CC6.1":
                 ctrl.status = "compliant"
                 ctrl.evidence = "AES-256-GCM encryption available for sensitive application payloads"
             elif ctrl.control_id == "CC6.2":
                 ctrl.status = "compliant"
-                ctrl.evidence = "TLS 1.3 enforced via ALB policy ELBSecurityPolicy-TLS13"
+                ctrl.evidence = (
+                    "TLS 1.3 enforced via ALB policy ELBSecurityPolicy-TLS13"
+                )
             elif ctrl.control_id == "CC7.1":
                 ctrl.status = "compliant"
                 ctrl.evidence = (
@@ -375,7 +389,9 @@ class ComplianceChecker:
                 ctrl.evidence = "Real-time anomaly detection via ensemble ML (Z-score + IQR + IsolationForest)"
             elif ctrl.control_id == "CC8.1":
                 ctrl.status = "compliant"
-                ctrl.evidence = "CI/CD with lint, test, security scan, container scan before deploy"
+                ctrl.evidence = (
+                    "CI/CD with lint, test, security scan, container scan before deploy"
+                )
             else:
                 ctrl.status = "partial"
                 ctrl.evidence = "Manual review required"
@@ -385,12 +401,19 @@ class ComplianceChecker:
         """Return compliance percentage (0–100)."""
         if not self._controls:
             return 0.0
-        score_map = {"compliant": 1.0, "partial": 0.5, "non_compliant": 0.0, "not_assessed": 0.0}
+        score_map = {
+            "compliant": 1.0,
+            "partial": 0.5,
+            "non_compliant": 0.0,
+            "not_assessed": 0.0,
+        }
         total = sum(score_map.get(c.status, 0) for c in self._controls)
         return round(total / len(self._controls) * 100, 1)
 
     def non_compliant_controls(self) -> list[ComplianceControl]:
-        return [c for c in self._controls if c.status in ("non_compliant", "not_assessed")]
+        return [
+            c for c in self._controls if c.status in ("non_compliant", "not_assessed")
+        ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════

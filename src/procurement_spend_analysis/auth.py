@@ -29,6 +29,7 @@ from pydantic import BaseModel, Field
 # Token types
 # ---------------------------------------------------------------------------
 
+
 class TokenType(str, Enum):
     JWT = "jwt"
     API_KEY = "api_key"
@@ -55,7 +56,7 @@ def _b64url_decode(s: str) -> bytes:
 class JWTClaims(BaseModel):
     """Standard + custom claims embedded in access tokens."""
 
-    sub: str                     # user_id
+    sub: str  # user_id
     tenant_id: str
     roles: list[str] = Field(default_factory=list)
     permissions: list[str] = Field(default_factory=list)
@@ -149,6 +150,7 @@ class JWTService:
 # API Key management
 # ---------------------------------------------------------------------------
 
+
 class APIKey(BaseModel):
     """Persistent API key record."""
 
@@ -156,9 +158,11 @@ class APIKey(BaseModel):
     tenant_id: str
     name: str
     key_hash: str  # SHA-256 hash of the raw key — never store raw
-    prefix: str    # first 8 chars for identification, e.g. "pi_live_"
+    prefix: str  # first 8 chars for identification, e.g. "pi_live_"
     scopes: list[str] = Field(default_factory=list)
-    created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
     expires_at: Optional[str] = None
     is_active: bool = True
     last_used_at: Optional[str] = None
@@ -176,8 +180,8 @@ class APIKeyService:
     _PREFIX = "pi_live_"
 
     def __init__(self) -> None:
-        self._keys: dict[str, APIKey] = {}         # key_id -> APIKey
-        self._hash_index: dict[str, str] = {}       # key_hash -> key_id
+        self._keys: dict[str, APIKey] = {}  # key_id -> APIKey
+        self._hash_index: dict[str, str] = {}  # key_hash -> key_id
 
     @staticmethod
     def _hash_key(raw: str) -> str:
@@ -245,6 +249,7 @@ class APIKeyService:
 # ---------------------------------------------------------------------------
 # Rate limiting (token bucket)
 # ---------------------------------------------------------------------------
+
 
 class RateLimiter:
     """Per-tenant token-bucket rate limiter.

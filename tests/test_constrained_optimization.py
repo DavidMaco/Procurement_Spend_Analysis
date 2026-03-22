@@ -68,19 +68,102 @@ def _build_test_conn() -> sqlite3.Connection:
     ]
 
     purchase_orders = [
-        ("PO1", "2025-01-01", "SUP1", "Supplier A", "M1", "Bottle", "Packaging", 100, 10, 1000, None, "NGN", "2025-01-10", "2025-01-09", "Delivered", "Paid", "Buyer", "Lagos"),
-        ("PO2", "2025-01-02", "SUP2", "Supplier B", "M1", "Bottle", "Packaging", 120, 11, 1320, None, "NGN", "2025-01-11", "2025-01-11", "Delivered", "Paid", "Buyer", "Lagos"),
-        ("PO3", "2025-01-03", "SUP3", "Supplier C", "M1", "Bottle", "Packaging", 130, 13, 1690, None, "NGN", "2025-01-12", "2025-01-15", "Delivered", "Paid", "Buyer", "Lagos"),
-        ("PO4", "2025-01-04", "SUP1", "Supplier A", "M2", "Cap", "Packaging", 140, 9, 1260, None, "NGN", "2025-01-13", "2025-01-12", "Delivered", "Paid", "Buyer", "Lagos"),
+        (
+            "PO1",
+            "2025-01-01",
+            "SUP1",
+            "Supplier A",
+            "M1",
+            "Bottle",
+            "Packaging",
+            100,
+            10,
+            1000,
+            None,
+            "NGN",
+            "2025-01-10",
+            "2025-01-09",
+            "Delivered",
+            "Paid",
+            "Buyer",
+            "Lagos",
+        ),
+        (
+            "PO2",
+            "2025-01-02",
+            "SUP2",
+            "Supplier B",
+            "M1",
+            "Bottle",
+            "Packaging",
+            120,
+            11,
+            1320,
+            None,
+            "NGN",
+            "2025-01-11",
+            "2025-01-11",
+            "Delivered",
+            "Paid",
+            "Buyer",
+            "Lagos",
+        ),
+        (
+            "PO3",
+            "2025-01-03",
+            "SUP3",
+            "Supplier C",
+            "M1",
+            "Bottle",
+            "Packaging",
+            130,
+            13,
+            1690,
+            None,
+            "NGN",
+            "2025-01-12",
+            "2025-01-15",
+            "Delivered",
+            "Paid",
+            "Buyer",
+            "Lagos",
+        ),
+        (
+            "PO4",
+            "2025-01-04",
+            "SUP1",
+            "Supplier A",
+            "M2",
+            "Cap",
+            "Packaging",
+            140,
+            9,
+            1260,
+            None,
+            "NGN",
+            "2025-01-13",
+            "2025-01-12",
+            "Delivered",
+            "Paid",
+            "Buyer",
+            "Lagos",
+        ),
     ]
 
     incidents = [
         ("QI1", "PO3", "SUP3", "Defect", "High", 100.0),
     ]
 
-    cur.executemany("INSERT INTO suppliers VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", suppliers)
-    cur.executemany("INSERT INTO purchase_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", purchase_orders)
-    cur.executemany("INSERT INTO quality_incidents VALUES (?, ?, ?, ?, ?, ?)", incidents)
+    cur.executemany(
+        "INSERT INTO suppliers VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", suppliers
+    )
+    cur.executemany(
+        "INSERT INTO purchase_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        purchase_orders,
+    )
+    cur.executemany(
+        "INSERT INTO quality_incidents VALUES (?, ?, ?, ?, ?, ?)", incidents
+    )
 
     conn.commit()
     return conn
@@ -101,7 +184,12 @@ def test_constrained_optimization_returns_rows_and_summary():
     recs, summary = run_constrained_optimization(conn=conn, constraints=constraints)
 
     assert not recs.empty
-    assert {"category", "supplier_id", "constrained_share", "projected_spend_ngn"}.issubset(set(recs.columns))
+    assert {
+        "category",
+        "supplier_id",
+        "constrained_share",
+        "projected_spend_ngn",
+    }.issubset(set(recs.columns))
     assert summary["constrained_spend_ngn"] > 0
     assert summary["constrained_savings_ngn"] >= 0
     assert summary["constrained_savings_pct"] >= 0

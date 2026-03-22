@@ -61,6 +61,7 @@ class SemanticMetricsLayer:
 # Pre-registered metrics
 # ---------------------------------------------------------------------------
 
+
 def _gross_sales(df: pd.DataFrame) -> pd.Series:
     return df["units_sold"] * df["list_price"]
 
@@ -111,53 +112,67 @@ def _contribution_margin(df: pd.DataFrame) -> pd.Series:
 def default_metrics_layer() -> SemanticMetricsLayer:
     """Factory returning a :class:`SemanticMetricsLayer` with all standard FMCG metrics."""
     layer = SemanticMetricsLayer()
-    layer.register(Metric(
-        name="gross_sales",
-        formula=_gross_sales,
-        dimensions=["sku_id", "store_id", "date"],
-        grain="sku_store_day",
-        description="units_sold × list_price",
-    ))
-    layer.register(Metric(
-        name="net_sales",
-        formula=_net_sales,
-        dimensions=["sku_id", "store_id", "date"],
-        grain="sku_store_day",
-        description="gross_sales × (1 − discount_pct)",
-    ))
-    layer.register(Metric(
-        name="promo_roi",
-        formula=_promo_roi,
-        dimensions=["sku_id", "store_id", "date"],
-        grain="sku_store_day",
-        description="Incremental net margin from promo rows / discount amount",
-    ))
-    layer.register(Metric(
-        name="gross_to_net_leakage",
-        formula=_gross_to_net_leakage,
-        dimensions=["sku_id", "store_id", "date"],
-        grain="sku_store_day",
-        description="(gross_sales − net_sales) / gross_sales",
-    ))
-    layer.register(Metric(
-        name="unit_margin",
-        formula=_unit_margin,
-        dimensions=["sku_id", "store_id", "date"],
-        grain="sku_store_day",
-        description="(net_sales / units_sold) − purchase_cost",
-    ))
-    layer.register(Metric(
-        name="purchase_cost_total",
-        formula=_purchase_cost_total,
-        dimensions=["sku_id", "store_id", "date"],
-        grain="sku_store_day",
-        description="purchase_cost × units_sold",
-    ))
-    layer.register(Metric(
-        name="contribution_margin",
-        formula=_contribution_margin,
-        dimensions=["sku_id", "store_id", "date"],
-        grain="sku_store_day",
-        description="net_sales − (purchase_cost × units_sold)",
-    ))
+    layer.register(
+        Metric(
+            name="gross_sales",
+            formula=_gross_sales,
+            dimensions=["sku_id", "store_id", "date"],
+            grain="sku_store_day",
+            description="units_sold × list_price",
+        )
+    )
+    layer.register(
+        Metric(
+            name="net_sales",
+            formula=_net_sales,
+            dimensions=["sku_id", "store_id", "date"],
+            grain="sku_store_day",
+            description="gross_sales × (1 − discount_pct)",
+        )
+    )
+    layer.register(
+        Metric(
+            name="promo_roi",
+            formula=_promo_roi,
+            dimensions=["sku_id", "store_id", "date"],
+            grain="sku_store_day",
+            description="Incremental net margin from promo rows / discount amount",
+        )
+    )
+    layer.register(
+        Metric(
+            name="gross_to_net_leakage",
+            formula=_gross_to_net_leakage,
+            dimensions=["sku_id", "store_id", "date"],
+            grain="sku_store_day",
+            description="(gross_sales − net_sales) / gross_sales",
+        )
+    )
+    layer.register(
+        Metric(
+            name="unit_margin",
+            formula=_unit_margin,
+            dimensions=["sku_id", "store_id", "date"],
+            grain="sku_store_day",
+            description="(net_sales / units_sold) − purchase_cost",
+        )
+    )
+    layer.register(
+        Metric(
+            name="purchase_cost_total",
+            formula=_purchase_cost_total,
+            dimensions=["sku_id", "store_id", "date"],
+            grain="sku_store_day",
+            description="purchase_cost × units_sold",
+        )
+    )
+    layer.register(
+        Metric(
+            name="contribution_margin",
+            formula=_contribution_margin,
+            dimensions=["sku_id", "store_id", "date"],
+            grain="sku_store_day",
+            description="net_sales − (purchase_cost × units_sold)",
+        )
+    )
     return layer

@@ -61,8 +61,13 @@ def test_monte_carlo_consistency_with_seed():
         random_seed=42,
     )
 
-    assert mc_results1["total_savings_mean_ngn"] == mc_results2["total_savings_mean_ngn"]
-    assert mc_results1["total_savings_median_ngn"] == mc_results2["total_savings_median_ngn"]
+    assert (
+        mc_results1["total_savings_mean_ngn"] == mc_results2["total_savings_mean_ngn"]
+    )
+    assert (
+        mc_results1["total_savings_median_ngn"]
+        == mc_results2["total_savings_median_ngn"]
+    )
 
 
 def test_monte_carlo_variance_with_different_seed():
@@ -78,7 +83,9 @@ def test_monte_carlo_variance_with_different_seed():
         random_seed=999,
     )
 
-    assert mc_results1["total_savings_mean_ngn"] != mc_results2["total_savings_mean_ngn"]
+    assert (
+        mc_results1["total_savings_mean_ngn"] != mc_results2["total_savings_mean_ngn"]
+    )
 
 
 def test_monte_carlo_to_dataframe_basic():
@@ -92,7 +99,9 @@ def test_monte_carlo_to_dataframe_basic():
 
     assert isinstance(mc_df, pd.DataFrame)
     assert len(mc_df) > 0
-    assert {"Statistic", "Total Savings (NGN)", "Savings % of Spend"}.issubset(set(mc_df.columns))
+    assert {"Statistic", "Total Savings (NGN)", "Savings % of Spend"}.issubset(
+        set(mc_df.columns)
+    )
 
 
 def test_monte_carlo_to_dataframe_structure():
@@ -104,7 +113,9 @@ def test_monte_carlo_to_dataframe_structure():
 
     mc_df = monte_carlo_to_dataframe(mc_results)
     stats = set(mc_df["Statistic"].tolist())
-    assert {"Mean", "Median", "Std Dev", "5% Percentile", "95% Percentile"}.issubset(stats)
+    assert {"Mean", "Median", "Std Dev", "5% Percentile", "95% Percentile"}.issubset(
+        stats
+    )
 
 
 def test_monte_carlo_result_keys():

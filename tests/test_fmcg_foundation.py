@@ -12,12 +12,16 @@ from procurement_spend_analysis.fmcg.kpi_catalog import default_kpi_catalog
 from procurement_spend_analysis.fmcg.metrics import default_metrics_layer
 from procurement_spend_analysis.fmcg.models import validate_fmcg_dataframe
 from procurement_spend_analysis.fmcg.pilot import PilotConfig, select_pilot_cohort
-from procurement_spend_analysis.fmcg.reconciliation import ReconciliationSuite, default_reconciliation_suite
+from procurement_spend_analysis.fmcg.reconciliation import (
+    ReconciliationSuite,
+    default_reconciliation_suite,
+)
 
 
 # ---------------------------------------------------------------------------
 # Shared fixture — ~100 realistic rows
 # ---------------------------------------------------------------------------
+
 
 def _make_row(
     idx: int,
@@ -109,10 +113,23 @@ def sample_fmcg_df() -> pd.DataFrame:
                     is_wk = 1 if idx % 5 == 0 else 0
                     is_hol = 1 if idx % 20 == 0 else 0
                     promo = 1 if idx % 3 == 0 else 0
-                    rows.append(_make_row(
-                        idx, country, city, store, cat, subcat, brand,
-                        sku, name, sup, is_wk, is_hol, promo,
-                    ))
+                    rows.append(
+                        _make_row(
+                            idx,
+                            country,
+                            city,
+                            store,
+                            cat,
+                            subcat,
+                            brand,
+                            sku,
+                            name,
+                            sup,
+                            is_wk,
+                            is_hol,
+                            promo,
+                        )
+                    )
                     idx += 1
     return pd.DataFrame(rows)
 
@@ -120,6 +137,7 @@ def sample_fmcg_df() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Schema tests
 # ---------------------------------------------------------------------------
+
 
 class TestFMCGSchema:
     def test_fmcg_schema_valid_data(self, sample_fmcg_df: pd.DataFrame) -> None:
@@ -139,28 +157,39 @@ class TestFMCGSchema:
 # Reconciliation tests
 # ---------------------------------------------------------------------------
 
+
 class TestReconciliation:
-    def test_reconciliation_suite_passes_clean_data(self, sample_fmcg_df: pd.DataFrame) -> None:
+    def test_reconciliation_suite_passes_clean_data(
+        self, sample_fmcg_df: pd.DataFrame
+    ) -> None:
         suite = default_reconciliation_suite()
         reports = suite.run(sample_fmcg_df)
         summary = ReconciliationSuite.summary(reports)
         for rule_name, info in summary.items():
             assert info["pass_rate"] == 1.0, f"{rule_name} failed on clean data"
 
-    def test_reconciliation_suite_catches_gross_sales_mismatch(self, sample_fmcg_df: pd.DataFrame) -> None:
+    def test_reconciliation_suite_catches_gross_sales_mismatch(
+        self, sample_fmcg_df: pd.DataFrame
+    ) -> None:
         bad = sample_fmcg_df.copy()
         bad.loc[0, "gross_sales"] = 0.0  # wrong
         suite = default_reconciliation_suite()
         reports = suite.run(bad)
-        gross_report = next(r for r in reports if r.rule_name == "gross_sales_reconciliation")
+        gross_report = next(
+            r for r in reports if r.rule_name == "gross_sales_reconciliation"
+        )
         assert gross_report.failed_rows >= 1
 
-    def test_reconciliation_suite_catches_net_sales_mismatch(self, sample_fmcg_df: pd.DataFrame) -> None:
+    def test_reconciliation_suite_catches_net_sales_mismatch(
+        self, sample_fmcg_df: pd.DataFrame
+    ) -> None:
         bad = sample_fmcg_df.copy()
         bad.loc[0, "net_sales"] = 0.0  # wrong
         suite = default_reconciliation_suite()
         reports = suite.run(bad)
-        net_report = next(r for r in reports if r.rule_name == "net_sales_reconciliation")
+        net_report = next(
+            r for r in reports if r.rule_name == "net_sales_reconciliation"
+        )
         assert net_report.failed_rows >= 1
 
 
@@ -168,21 +197,31 @@ class TestReconciliation:
 # Metrics tests
 # ---------------------------------------------------------------------------
 
+
 class TestMetrics:
-    def test_metrics_layer_compute_gross_sales(self, sample_fmcg_df: pd.DataFrame) -> None:
+    def test_metrics_layer_compute_gross_sales(
+        self, sample_fmcg_df: pd.DataFrame
+    ) -> None:
         layer = default_metrics_layer()
         result = layer.compute("gross_sales", sample_fmcg_df)
         expected = sample_fmcg_df["units_sold"] * sample_fmcg_df["list_price"]
-        pd.testing.assert_series_equal(result["gross_sales"], expected, check_names=False)
+        pd.testing.assert_series_equal(
+            result["gross_sales"], expected, check_names=False
+        )
 
-    def test_metrics_layer_compute_gross_to_net_leakage(self, sample_fmcg_df: pd.DataFrame) -> None:
+    def test_metrics_layer_compute_gross_to_net_leakage(
+        self, sample_fmcg_df: pd.DataFrame
+    ) -> None:
         layer = default_metrics_layer()
         result = layer.compute("gross_to_net_leakage", sample_fmcg_df)
         gross = sample_fmcg_df["units_sold"] * sample_fmcg_df["list_price"]
         net = gross * (1 - sample_fmcg_df["discount_pct"])
         expected = (gross - net) / gross
         pd.testing.assert_series_equal(
-            result["gross_to_net_leakage"], expected, check_names=False, atol=1e-9,
+            result["gross_to_net_leakage"],
+            expected,
+            check_names=False,
+            atol=1e-9,
         )
 
 
@@ -190,18 +229,24 @@ class TestMetrics:
 # Feature store tests
 # ---------------------------------------------------------------------------
 
+
 class TestFeatureStore:
-    def test_feature_store_builds_all_features(self, sample_fmcg_df: pd.DataFrame) -> None:
+    def test_feature_store_builds_all_features(
+        self, sample_fmcg_df: pd.DataFrame
+    ) -> None:
         store = default_feature_store()
         built = store.build(sample_fmcg_df)
         for feat in store.list_features():
-            assert feat.name in built.columns, f"Feature {feat.name} missing from output"
+            assert feat.name in built.columns, (
+                f"Feature {feat.name} missing from output"
+            )
         assert len(built) == len(sample_fmcg_df)
 
 
 # ---------------------------------------------------------------------------
 # KPI catalog tests
 # ---------------------------------------------------------------------------
+
 
 class TestKPICatalog:
     def test_kpi_catalog_lists_all_kpis(self) -> None:
@@ -226,8 +271,11 @@ class TestKPICatalog:
 # Pilot selection tests
 # ---------------------------------------------------------------------------
 
+
 class TestPilot:
-    def test_pilot_selection_returns_valid_cohort(self, sample_fmcg_df: pd.DataFrame) -> None:
+    def test_pilot_selection_returns_valid_cohort(
+        self, sample_fmcg_df: pd.DataFrame
+    ) -> None:
         cohort = select_pilot_cohort(sample_fmcg_df)
         assert cohort.country in sample_fmcg_df["country"].unique()
         assert len(cohort.categories) >= 1
@@ -235,7 +283,11 @@ class TestPilot:
         assert len(cohort.treatment_stores) >= 1
         assert cohort.row_count > 0
 
-    def test_pilot_selection_respects_config(self, sample_fmcg_df: pd.DataFrame) -> None:
-        config = PilotConfig(min_categories=1, max_categories=2, min_rows_per_category=1)
+    def test_pilot_selection_respects_config(
+        self, sample_fmcg_df: pd.DataFrame
+    ) -> None:
+        config = PilotConfig(
+            min_categories=1, max_categories=2, min_rows_per_category=1
+        )
         cohort = select_pilot_cohort(sample_fmcg_df, config=config)
         assert len(cohort.categories) <= 2

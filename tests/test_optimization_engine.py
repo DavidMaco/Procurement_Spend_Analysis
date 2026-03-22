@@ -63,30 +63,109 @@ def test_run_supplier_optimization_returns_summary_and_rows():
 
     suppliers_rows = [
         ("SUP1", "Supplier A", "Packaging", "Nigeria", "Net 30", "NGN", 4.5, 1, "Low"),
-        ("SUP2", "Supplier B", "Packaging", "Nigeria", "Net 30", "NGN", 4.0, 1, "Medium"),
+        (
+            "SUP2",
+            "Supplier B",
+            "Packaging",
+            "Nigeria",
+            "Net 30",
+            "NGN",
+            4.0,
+            1,
+            "Medium",
+        ),
         ("SUP3", "Supplier C", "Packaging", "Nigeria", "Net 30", "NGN", 3.8, 1, "High"),
     ]
 
     po_rows = [
-        ("PO1", "2025-01-01", "SUP1", "Supplier A", "MAT1", "Bottle", "Packaging", 100, 10, 1000, None, "NGN", "2025-01-10", "2025-01-09", "Delivered", "Paid", "Buyer", "Lagos"),
-        ("PO2", "2025-01-01", "SUP2", "Supplier B", "MAT1", "Bottle", "Packaging", 100, 12, 1200, None, "NGN", "2025-01-10", "2025-01-11", "Delivered", "Paid", "Buyer", "Lagos"),
-        ("PO3", "2025-01-01", "SUP3", "Supplier C", "MAT1", "Bottle", "Packaging", 100, 15, 1500, None, "NGN", "2025-01-10", "2025-01-14", "Delivered", "Paid", "Buyer", "Lagos"),
+        (
+            "PO1",
+            "2025-01-01",
+            "SUP1",
+            "Supplier A",
+            "MAT1",
+            "Bottle",
+            "Packaging",
+            100,
+            10,
+            1000,
+            None,
+            "NGN",
+            "2025-01-10",
+            "2025-01-09",
+            "Delivered",
+            "Paid",
+            "Buyer",
+            "Lagos",
+        ),
+        (
+            "PO2",
+            "2025-01-01",
+            "SUP2",
+            "Supplier B",
+            "MAT1",
+            "Bottle",
+            "Packaging",
+            100,
+            12,
+            1200,
+            None,
+            "NGN",
+            "2025-01-10",
+            "2025-01-11",
+            "Delivered",
+            "Paid",
+            "Buyer",
+            "Lagos",
+        ),
+        (
+            "PO3",
+            "2025-01-01",
+            "SUP3",
+            "Supplier C",
+            "MAT1",
+            "Bottle",
+            "Packaging",
+            100,
+            15,
+            1500,
+            None,
+            "NGN",
+            "2025-01-10",
+            "2025-01-14",
+            "Delivered",
+            "Paid",
+            "Buyer",
+            "Lagos",
+        ),
     ]
 
     qi_rows = [
         ("QI1", "PO3", "SUP3", "Quality Defect", "High", 150),
     ]
 
-    cur.executemany("INSERT INTO suppliers VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", suppliers_rows)
-    cur.executemany("INSERT INTO purchase_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", po_rows)
+    cur.executemany(
+        "INSERT INTO suppliers VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", suppliers_rows
+    )
+    cur.executemany(
+        "INSERT INTO purchase_orders VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        po_rows,
+    )
     cur.executemany("INSERT INTO quality_incidents VALUES (?, ?, ?, ?, ?, ?)", qi_rows)
 
     conn.commit()
 
-    recs, summary = run_supplier_optimization(conn, max_suppliers_per_category=2, min_supplier_share=0.2)
+    recs, summary = run_supplier_optimization(
+        conn, max_suppliers_per_category=2, min_supplier_share=0.2
+    )
 
     assert not recs.empty
-    assert {"category", "supplier_id", "recommended_share", "projected_spend_ngn"}.issubset(set(recs.columns))
+    assert {
+        "category",
+        "supplier_id",
+        "recommended_share",
+        "projected_spend_ngn",
+    }.issubset(set(recs.columns))
     assert summary["historical_spend_ngn"] > 0
     assert summary["optimized_spend_ngn"] > 0
     assert summary["optimization_savings_ngn"] >= 0

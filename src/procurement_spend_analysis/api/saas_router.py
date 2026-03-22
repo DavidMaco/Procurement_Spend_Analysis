@@ -14,7 +14,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from procurement_spend_analysis.auth import APIKeyService, JWTClaims, JWTService, RateLimiter
+from procurement_spend_analysis.auth import (
+    APIKeyService,
+    JWTClaims,
+    JWTService,
+    RateLimiter,
+)
 from procurement_spend_analysis.billing import PLANS, BillingService, UsageMetric
 from procurement_spend_analysis.intelligence import (
     DemandForecastEngine,
@@ -67,7 +72,9 @@ async def _extract_claims(request: Request) -> JWTClaims:
     """Extract and validate JWT from Authorization header."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+        raise HTTPException(
+            status_code=401, detail="Missing or invalid Authorization header"
+        )
     token = auth_header[7:]
     jwt_svc = _get_jwt_service()
     try:
@@ -76,7 +83,9 @@ async def _extract_claims(request: Request) -> JWTClaims:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
 
-async def _require_tenant(claims: Annotated[JWTClaims, Depends(_extract_claims)]) -> Tenant:
+async def _require_tenant(
+    claims: Annotated[JWTClaims, Depends(_extract_claims)],
+) -> Tenant:
     """Resolve tenant from JWT claims and enforce active status."""
     try:
         tenant = _tenant_registry.get(claims.tenant_id)
@@ -92,7 +101,9 @@ async def _enforce_rate_limit(
     tenant: Annotated[Tenant, Depends(_require_tenant)],
 ) -> JWTClaims:
     """Token-bucket rate limiting per tenant."""
-    allowed = _rate_limiter.consume(tenant.tenant_id, tenant.limits.max_api_calls_per_month)
+    allowed = _rate_limiter.consume(
+        tenant.tenant_id, tenant.limits.max_api_calls_per_month
+    )
     if not allowed:
         raise HTTPException(status_code=429, detail="Monthly API rate limit exceeded")
     _billing_service.meter.record(tenant.tenant_id, UsageMetric.API_CALLS)
@@ -202,7 +213,9 @@ def issue_token(body: TokenRequest) -> TokenResponse:
         email=body.email,
         name=body.name,
     )
-    refresh = jwt_svc.create_refresh_token(user_id=body.user_id, tenant_id=body.tenant_id)
+    refresh = jwt_svc.create_refresh_token(
+        user_id=body.user_id, tenant_id=body.tenant_id
+    )
     return TokenResponse(access_token=access, refresh_token=refresh)
 
 
@@ -284,7 +297,9 @@ def intelligence_summary(claims: AuthClaims) -> IntelligenceSummaryResponse:
     risks = _risk_engine.assess(supp_df, po_df, qi_df)
     savings = _savings_finder.find(po_df, supp_df)
 
-    forecasts = _forecast_engine.forecast(po_df, date_col="po_date", value_col="quantity")
+    forecasts = _forecast_engine.forecast(
+        po_df, date_col="po_date", value_col="quantity"
+    )
     context = {
         "insights": bundle["insights"],
         "analytics": bundle["analytics"],
@@ -322,7 +337,10 @@ def demand_forecast(claims: AuthClaims) -> dict[str, Any]:
         value_col="quantity",
     )
     _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
-    return {"forecasts": [dataclasses.asdict(f) for f in forecasts], "count": len(forecasts)}
+    return {
+        "forecasts": [dataclasses.asdict(f) for f in forecasts],
+        "count": len(forecasts),
+    }
 
 
 @router.get("/intelligence/anomalies")
@@ -332,7 +350,10 @@ def detect_anomalies(claims: AuthClaims) -> dict[str, Any]:
     bundle = generate_demo_bundle(2500, 42, 150)
     anomalies = _anomaly_detector.detect(bundle["raw"]["purchase_orders"])
     _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
-    return {"anomalies": [dataclasses.asdict(a) for a in anomalies], "count": len(anomalies)}
+    return {
+        "anomalies": [dataclasses.asdict(a) for a in anomalies],
+        "count": len(anomalies),
+    }
 
 
 @router.get("/intelligence/risk-scores")
@@ -346,7 +367,10 @@ def supplier_risk_scores(claims: AuthClaims) -> dict[str, Any]:
         bundle["raw"]["quality_incidents"],
     )
     _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
-    return {"risk_scores": [dataclasses.asdict(s) for s in scores], "count": len(scores)}
+    return {
+        "risk_scores": [dataclasses.asdict(s) for s in scores],
+        "count": len(scores),
+    }
 
 
 @router.get("/intelligence/savings")
@@ -354,7 +378,9 @@ def savings_opportunities(claims: AuthClaims) -> dict[str, Any]:
     from dashboard_data import generate_demo_bundle
 
     bundle = generate_demo_bundle(2500, 42, 150)
-    opps = _savings_finder.find(bundle["raw"]["purchase_orders"], bundle["raw"]["suppliers"])
+    opps = _savings_finder.find(
+        bundle["raw"]["purchase_orders"], bundle["raw"]["suppliers"]
+    )
     _billing_service.meter.record(claims.tenant_id, UsageMetric.ML_JOBS)
     return {"opportunities": [dataclasses.asdict(o) for o in opps], "count": len(opps)}
 
@@ -367,7 +393,10 @@ async def event_stream(claims: AuthClaims) -> StreamingResponse:
     """Server-Sent Events stream for real-time tenant notifications."""
     tenant = _tenant_registry.get(claims.tenant_id)
     if not tenant.limits.realtime_streaming:
-        raise HTTPException(status_code=403, detail="Real-time streaming requires Professional tier or above")
+        raise HTTPException(
+            status_code=403,
+            detail="Real-time streaming requires Professional tier or above",
+        )
     sse_manager = get_sse_manager()
     return StreamingResponse(
         sse_manager.stream(claims.tenant_id),
@@ -413,7 +442,9 @@ def register_webhook(body: WebhookCreateRequest, claims: AuthClaims) -> WebhookR
     tenant = _tenant_registry.get(claims.tenant_id)
     existing = get_webhook_service().list_for_tenant(claims.tenant_id)
     if len(existing) >= tenant.limits.max_webhooks:
-        raise HTTPException(status_code=403, detail="Webhook limit reached for your tier")
+        raise HTTPException(
+            status_code=403, detail="Webhook limit reached for your tier"
+        )
     ep = get_webhook_service().register(
         tenant_id=claims.tenant_id,
         url=body.url,
@@ -504,7 +535,9 @@ def get_subscription(claims: AuthClaims) -> SubscriptionResponse:
 
 
 @router.post("/billing/upgrade", response_model=SubscriptionResponse)
-def upgrade_subscription(body: UpgradeRequest, claims: AuthClaims) -> SubscriptionResponse:
+def upgrade_subscription(
+    body: UpgradeRequest, claims: AuthClaims
+) -> SubscriptionResponse:
     try:
         sub = _billing_service.upgrade(claims.tenant_id, body.plan_id)
     except (KeyError, ValueError) as exc:

@@ -12,7 +12,10 @@ from dashboard_data import build_bundle_from_upload_bytes, generate_demo_bundle
 from procurement_spend_analysis.config import get_settings
 from procurement_spend_analysis.fmcg.api_router import router as fmcg_router
 from procurement_spend_analysis.api.saas_router import router as saas_router
-from procurement_spend_analysis.ml.models import detect_procurement_anomalies, forecast_category_demand
+from procurement_spend_analysis.ml.models import (
+    detect_procurement_anomalies,
+    forecast_category_demand,
+)
 from procurement_spend_analysis.observability import (
     METRICS_CONTENT_TYPE,
     configure_logging,
@@ -27,7 +30,9 @@ settings = get_settings()
 configure_logging(settings.log_level)
 logger = get_logger(__name__)
 
-app = FastAPI(title="Procurement Intelligence SaaS API", version=settings.package_version)
+app = FastAPI(
+    title="Procurement Intelligence SaaS API", version=settings.package_version
+)
 app.include_router(fmcg_router)
 app.include_router(saas_router)
 app.add_middleware(
@@ -53,12 +58,21 @@ async def instrument_requests(request: Request, call_next):
         response = await call_next(request)
     except Exception as exc:
         duration = time.perf_counter() - start
-        logger.exception("Unhandled request failure", extra={"request_id": request_id, "path": request.url.path, "duration_ms": round(duration * 1000, 2)})
+        logger.exception(
+            "Unhandled request failure",
+            extra={
+                "request_id": request_id,
+                "path": request.url.path,
+                "duration_ms": round(duration * 1000, 2),
+            },
+        )
         record_request_metrics(request.method, request.url.path, 500, duration)
         raise exc
     duration = time.perf_counter() - start
     response.headers["X-Request-ID"] = request_id
-    record_request_metrics(request.method, request.url.path, response.status_code, duration)
+    record_request_metrics(
+        request.method, request.url.path, response.status_code, duration
+    )
     logger.info(
         "Request handled",
         extra={
@@ -74,7 +88,11 @@ async def instrument_requests(request: Request, call_next):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": settings.app_name, "environment": settings.environment}
+    return {
+        "status": "ok",
+        "service": settings.app_name,
+        "environment": settings.environment,
+    }
 
 
 @app.get("/metrics")
@@ -92,7 +110,9 @@ def analytics_demo(payload: DemoRequest) -> dict:
     return {
         "metadata": bundle["metadata"],
         "insights": bundle["insights"],
-        "summary": bundle["analytics"]["procurement_insights_summary"].to_dict(orient="records"),
+        "summary": bundle["analytics"]["procurement_insights_summary"].to_dict(
+            orient="records"
+        ),
     }
 
 
@@ -102,7 +122,10 @@ async def analytics_upload(files: list[UploadFile] = File(...)) -> dict:
     for file in files:
         safe_name = sanitize_filename(file.filename or "upload.csv")
         payload = await file.read()
-        validate_text_payload(payload.decode("utf-8", errors="ignore"), max_chars=settings.max_upload_file_size_mb * 1024 * 1024)
+        validate_text_payload(
+            payload.decode("utf-8", errors="ignore"),
+            max_chars=settings.max_upload_file_size_mb * 1024 * 1024,
+        )
         uploaded[safe_name] = payload
     try:
         bundle = build_bundle_from_upload_bytes(uploaded)
@@ -113,14 +136,18 @@ async def analytics_upload(files: list[UploadFile] = File(...)) -> dict:
 
 @app.post("/ml/forecast")
 def ml_forecast(payload: DemoRequest) -> dict:
-    bundle = generate_demo_bundle(payload.num_orders, payload.seed, payload.num_quality_incidents)
+    bundle = generate_demo_bundle(
+        payload.num_orders, payload.seed, payload.num_quality_incidents
+    )
     forecast = forecast_category_demand(bundle["raw"]["purchase_orders"])
     return {"forecast": forecast.to_dict(orient="records")}
 
 
 @app.post("/ml/anomalies")
 def ml_anomalies(payload: DemoRequest) -> dict:
-    bundle = generate_demo_bundle(payload.num_orders, payload.seed, payload.num_quality_incidents)
+    bundle = generate_demo_bundle(
+        payload.num_orders, payload.seed, payload.num_quality_incidents
+    )
     anomalies = detect_procurement_anomalies(bundle["raw"]["purchase_orders"])
     flagged = anomalies[anomalies["is_anomaly"]].head(25)
     return {"anomalies": flagged.to_dict(orient="records")}

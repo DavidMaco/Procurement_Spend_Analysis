@@ -30,7 +30,11 @@ def _normalize(series: pd.Series, inverse: bool = False) -> pd.Series:
 
 
 def _objective_costs(frame: pd.DataFrame, weights: dict[str, float]) -> pd.Series:
-    quality_column = "quality_cost_ngn" if "quality_cost_ngn" in frame.columns else "total_quality_cost_ngn"
+    quality_column = (
+        "quality_cost_ngn"
+        if "quality_cost_ngn" in frame.columns
+        else "total_quality_cost_ngn"
+    )
     cost_component = _normalize(frame["avg_unit_cost_ngn"], inverse=False)
     delivery_component = _normalize(frame["on_time_delivery_pct"], inverse=True)
     quality_component = _normalize(frame[quality_column], inverse=False)
@@ -55,7 +59,9 @@ def _build_optimized_frame(
     optimized["selected"] = selected
     optimized = optimized[optimized["recommended_share"] > 1e-6].copy()
     optimized["projected_quantity"] = optimized["recommended_share"] * category_quantity
-    optimized["projected_spend_ngn"] = optimized["projected_quantity"] * optimized["avg_unit_cost_ngn"]
+    optimized["projected_spend_ngn"] = (
+        optimized["projected_quantity"] * optimized["avg_unit_cost_ngn"]
+    )
     optimized["historical_category_spend_ngn"] = category_spend
     return optimized
 
@@ -74,12 +80,16 @@ def _fallback_category_mix(
     if fallback_count == 1:
         shares[0] = 1.0
     else:
-        costs = frame.iloc[:fallback_count]["avg_unit_cost_ngn"].astype(float).to_numpy()
+        costs = (
+            frame.iloc[:fallback_count]["avg_unit_cost_ngn"].astype(float).to_numpy()
+        )
         safe_costs = np.where(costs > 0, costs, 1.0)
         weights = 1.0 / safe_costs
         shares[:fallback_count] = weights / weights.sum()
 
-    return _build_optimized_frame(frame, shares, selected, category_spend, category_quantity)
+    return _build_optimized_frame(
+        frame, shares, selected, category_spend, category_quantity
+    )
 
 
 def _solve_category_mix(
@@ -107,7 +117,9 @@ def _solve_category_mix(
     select_offset = n
     num_vars = 2 * n
 
-    c = np.concatenate([frame["avg_unit_cost_ngn"].to_numpy(dtype=float), np.full(n, 0.001)])
+    c = np.concatenate(
+        [frame["avg_unit_cost_ngn"].to_numpy(dtype=float), np.full(n, 0.001)]
+    )
     integrality = np.concatenate([np.zeros(n, dtype=int), np.ones(n, dtype=int)])
     lower = np.concatenate([np.zeros(n), np.zeros(n)])
     upper = np.concatenate([np.full(n, max_single_supplier_share), np.ones(n)])
@@ -121,7 +133,11 @@ def _solve_category_mix(
 
     select_row = np.zeros(num_vars)
     select_row[select_offset:] = 1.0
-    constraints.append(LinearConstraint(select_row, lb=float(min_selected_suppliers), ub=float(max_suppliers)))
+    constraints.append(
+        LinearConstraint(
+            select_row, lb=float(min_selected_suppliers), ub=float(max_suppliers)
+        )
+    )
 
     for i in range(n):
         row_upper = np.zeros(num_vars)
@@ -138,9 +154,11 @@ def _solve_category_mix(
     if not result.success or result.x is None:
         raise ValueError(f"MILP optimization failed: {result.message}")
 
-    shares = result.x[shares_offset:shares_offset + n]
-    selected = result.x[select_offset:select_offset + n] > 0.5
-    return _build_optimized_frame(frame, shares, selected, category_spend, category_quantity)
+    shares = result.x[shares_offset : shares_offset + n]
+    selected = result.x[select_offset : select_offset + n] > 0.5
+    return _build_optimized_frame(
+        frame, shares, selected, category_spend, category_quantity
+    )
 
 
 def _optimize_categories(
@@ -157,15 +175,25 @@ def _optimize_categories(
     historical_spend = float(category_history["category_spend_ngn"].sum())
 
     for category, frame in supplier_metrics.groupby("category"):
-        category_row = category_history[category_history["category"] == category].iloc[0]
+        category_row = category_history[category_history["category"] == category].iloc[
+            0
+        ]
         scoped = frame.copy()
         scoped["composite_penalty"] = _objective_costs(scoped, weights)
-        scoped = scoped.sort_values(["composite_penalty", "avg_unit_cost_ngn"], ascending=[True, True]).reset_index(drop=True)
+        scoped = scoped.sort_values(
+            ["composite_penalty", "avg_unit_cost_ngn"], ascending=[True, True]
+        ).reset_index(drop=True)
 
         options = (category_options or {}).get(category, {})
-        resolved_max_suppliers = int(options.get("max_suppliers", max_suppliers_per_category))
-        resolved_min_supplier_share = float(options.get("min_supplier_share", min_supplier_share))
-        resolved_max_single_supplier_share = float(options.get("max_single_supplier_share", max_single_supplier_share))
+        resolved_max_suppliers = int(
+            options.get("max_suppliers", max_suppliers_per_category)
+        )
+        resolved_min_supplier_share = float(
+            options.get("min_supplier_share", min_supplier_share)
+        )
+        resolved_max_single_supplier_share = float(
+            options.get("max_single_supplier_share", max_single_supplier_share)
+        )
         resolved_min_selected_suppliers = int(options.get("min_selected_suppliers", 1))
 
         try:
@@ -181,7 +209,11 @@ def _optimize_categories(
         except ValueError as exc:
             if not allow_fallback:
                 raise
-            logger.warning("Falling back to deterministic supplier allocation for category %s: %s", category, exc)
+            logger.warning(
+                "Falling back to deterministic supplier allocation for category %s: %s",
+                category,
+                exc,
+            )
             optimized = _fallback_category_mix(
                 frame=scoped,
                 category_spend=float(category_row["category_spend_ngn"]),
@@ -191,8 +223,16 @@ def _optimize_categories(
 
         recommendations.append(optimized)
 
-    recommendations_df = pd.concat(recommendations, ignore_index=True) if recommendations else pd.DataFrame()
-    optimized_spend = float(recommendations_df["projected_spend_ngn"].sum()) if not recommendations_df.empty else historical_spend
+    recommendations_df = (
+        pd.concat(recommendations, ignore_index=True)
+        if recommendations
+        else pd.DataFrame()
+    )
+    optimized_spend = (
+        float(recommendations_df["projected_spend_ngn"].sum())
+        if not recommendations_df.empty
+        else historical_spend
+    )
     savings = max(0.0, historical_spend - optimized_spend)
     savings_pct = (savings / historical_spend * 100.0) if historical_spend else 0.0
 
@@ -216,12 +256,15 @@ def optimize_supplier_mix(
     score_weights: dict[str, float] | None = None,
 ) -> OptimizationResult:
     if supplier_metrics.empty:
-        return OptimizationResult(pd.DataFrame(), {
-            "historical_spend_ngn": 0.0,
-            "optimized_spend_ngn": 0.0,
-            "optimization_savings_ngn": 0.0,
-            "optimization_savings_pct": 0.0,
-        })
+        return OptimizationResult(
+            pd.DataFrame(),
+            {
+                "historical_spend_ngn": 0.0,
+                "optimized_spend_ngn": 0.0,
+                "optimization_savings_ngn": 0.0,
+                "optimization_savings_pct": 0.0,
+            },
+        )
 
     weights = score_weights or {
         "unit_cost": 0.45,
@@ -245,20 +288,31 @@ def optimize_supplier_mix_with_constraints(
     constraints: dict,
 ) -> OptimizationResult:
     if supplier_metrics.empty:
-        return OptimizationResult(pd.DataFrame(), {
-            "constrained_spend_ngn": 0.0,
-            "constrained_savings_ngn": 0.0,
-            "constrained_savings_pct": 0.0,
-            "dual_sourced_categories": 0,
-        })
+        return OptimizationResult(
+            pd.DataFrame(),
+            {
+                "constrained_spend_ngn": 0.0,
+                "constrained_savings_ngn": 0.0,
+                "constrained_savings_pct": 0.0,
+                "dual_sourced_categories": 0,
+            },
+        )
 
     risk_level_order = {"Low": 0, "Medium": 1, "High": 2}
-    max_risk_numeric = risk_level_order.get(constraints.get("max_risk_level", "High"), 2)
+    max_risk_numeric = risk_level_order.get(
+        constraints.get("max_risk_level", "High"), 2
+    )
     eligible = supplier_metrics.copy()
     eligible["risk_numeric"] = eligible["risk_level"].map(risk_level_order).fillna(3)
     eligible = eligible[
-        (eligible["on_time_delivery_pct"] >= float(constraints.get("min_on_time_delivery_pct", 0)))
-        & (eligible["quality_incident_count"] <= float(constraints.get("max_quality_incidents_per_order", float("inf"))))
+        (
+            eligible["on_time_delivery_pct"]
+            >= float(constraints.get("min_on_time_delivery_pct", 0))
+        )
+        & (
+            eligible["quality_incident_count"]
+            <= float(constraints.get("max_quality_incidents_per_order", float("inf")))
+        )
         & (eligible["risk_numeric"] <= max_risk_numeric)
     ].copy()
     if eligible.empty:
@@ -281,20 +335,31 @@ def optimize_supplier_mix_with_constraints(
         eligible_count = len(eligible_frame)
         scoped = eligible_frame if eligible_count else frame.copy()
         if eligible_count == 0:
-            logger.warning("No suppliers met constrained eligibility for category %s; using original candidate set.", category)
+            logger.warning(
+                "No suppliers met constrained eligibility for category %s; using original candidate set.",
+                category,
+            )
 
-        category_row = category_history[category_history["category"] == category].iloc[0]
+        category_row = category_history[category_history["category"] == category].iloc[
+            0
+        ]
         category_spend = float(category_row["category_spend_ngn"])
-        dual_source_required = eligible_count >= 2 and category_spend >= dual_source_threshold
+        dual_source_required = (
+            eligible_count >= 2 and category_spend >= dual_source_threshold
+        )
         category_options[category] = {
             "max_suppliers": min(2, len(scoped)),
             "min_selected_suppliers": 2 if dual_source_required else 1,
             "min_supplier_share": min_supplier_share,
-            "max_single_supplier_share": 1.0 if len(scoped) == 1 else max_single_supplier_share,
+            "max_single_supplier_share": 1.0
+            if len(scoped) == 1
+            else max_single_supplier_share,
         }
         scoped_frames.append(scoped)
 
-    scoped_metrics = pd.concat(scoped_frames, ignore_index=True) if scoped_frames else eligible
+    scoped_metrics = (
+        pd.concat(scoped_frames, ignore_index=True) if scoped_frames else eligible
+    )
     result = _optimize_categories(
         supplier_metrics=scoped_metrics,
         category_history=category_history,
@@ -307,11 +372,20 @@ def optimize_supplier_mix_with_constraints(
     )
     recommendations = result.recommendations.copy()
     recommendations["constrained_share"] = recommendations["recommended_share"]
-    recommendations["dual_sourced"] = recommendations.groupby("category")["supplier_id"].transform("nunique").gt(1).astype(int)
+    recommendations["dual_sourced"] = (
+        recommendations.groupby("category")["supplier_id"]
+        .transform("nunique")
+        .gt(1)
+        .astype(int)
+    )
     constrained_summary = {
         "constrained_spend_ngn": result.summary["optimized_spend_ngn"],
         "constrained_savings_ngn": result.summary["optimization_savings_ngn"],
         "constrained_savings_pct": result.summary["optimization_savings_pct"],
-        "dual_sourced_categories": int(recommendations.groupby("category")["supplier_id"].nunique().gt(1).sum()) if not recommendations.empty else 0,
+        "dual_sourced_categories": int(
+            recommendations.groupby("category")["supplier_id"].nunique().gt(1).sum()
+        )
+        if not recommendations.empty
+        else 0,
     }
     return OptimizationResult(recommendations, constrained_summary)

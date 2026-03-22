@@ -97,7 +97,9 @@ class TestAPIKeyService:
         assert len(t1_keys) == 2
 
     def test_create_with_scopes(self):
-        _, record = self.svc.create(tenant_id="t1", name="scoped", scopes=["read", "write"])
+        _, record = self.svc.create(
+            tenant_id="t1", name="scoped", scopes=["read", "write"]
+        )
         assert record.scopes == ["read", "write"]
 
 

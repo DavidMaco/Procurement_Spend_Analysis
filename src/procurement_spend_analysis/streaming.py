@@ -30,6 +30,7 @@ from uuid import uuid4
 # Event Bus
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class EventType(str, Enum):
     ALERT_FIRED = "alert.fired"
     RECOMMENDATION_CREATED = "recommendation.created"
@@ -69,12 +70,16 @@ class EventBus:
     """
 
     def __init__(self) -> None:
-        self._subscribers: dict[str, list[Callable[[StreamEvent], Any]]] = defaultdict(list)
+        self._subscribers: dict[str, list[Callable[[StreamEvent], Any]]] = defaultdict(
+            list
+        )
         self._all_subscribers: list[Callable[[StreamEvent], Any]] = []
         self._history: list[StreamEvent] = []
         self._max_history = 10_000
 
-    def subscribe(self, event_type: str, callback: Callable[[StreamEvent], Any]) -> None:
+    def subscribe(
+        self, event_type: str, callback: Callable[[StreamEvent], Any]
+    ) -> None:
         """Subscribe to a specific event type."""
         self._subscribers[event_type].append(callback)
 
@@ -86,7 +91,7 @@ class EventBus:
         """Publish an event to all matching subscribers synchronously."""
         self._history.append(event)
         if len(self._history) > self._max_history:
-            self._history = self._history[-self._max_history:]
+            self._history = self._history[-self._max_history :]
 
         for cb in self._all_subscribers:
             try:
@@ -123,6 +128,7 @@ class EventBus:
 # ═══════════════════════════════════════════════════════════════════════════
 # Server-Sent Events (SSE)
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class SSEChannel:
     """Per-tenant SSE channel that fans out events to connected clients.
@@ -187,19 +193,22 @@ class SSEManager:
 
     @staticmethod
     def _format_sse(event: StreamEvent) -> str:
-        data = json.dumps({
-            "event_id": event.event_id,
-            "event_type": event.event_type,
-            "timestamp": event.timestamp,
-            "payload": event.payload,
-            "source": event.source,
-        })
+        data = json.dumps(
+            {
+                "event_id": event.event_id,
+                "event_type": event.event_type,
+                "timestamp": event.timestamp,
+                "payload": event.payload,
+                "source": event.source,
+            }
+        )
         return f"event: {event.event_type}\ndata: {data}\n\n"
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Webhook Delivery
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 class WebhookStatus(str, Enum):
     ACTIVE = "active"
@@ -274,9 +283,7 @@ class WebhookService:
 
     def sign_payload(self, secret: str, payload: str) -> str:
         """Generate HMAC-SHA256 signature for webhook payload verification."""
-        return hmac.new(
-            secret.encode(), payload.encode(), hashlib.sha256
-        ).hexdigest()
+        return hmac.new(secret.encode(), payload.encode(), hashlib.sha256).hexdigest()
 
     def matching_endpoints(self, event: StreamEvent) -> list[WebhookEndpoint]:
         """Find all active webhooks that should receive this event."""

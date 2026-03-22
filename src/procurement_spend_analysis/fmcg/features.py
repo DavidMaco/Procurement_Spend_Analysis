@@ -15,7 +15,9 @@ class Feature:
 
     name: str
     source_columns: list[str] = field(default_factory=list)
-    transform: Callable[[pd.DataFrame], pd.Series] = field(default=lambda df: pd.Series(dtype="object"))
+    transform: Callable[[pd.DataFrame], pd.Series] = field(
+        default=lambda df: pd.Series(dtype="object")
+    )
     description: str = ""
 
 
@@ -42,6 +44,7 @@ class FeatureStore:
 # ---------------------------------------------------------------------------
 # Pre-registered feature transforms
 # ---------------------------------------------------------------------------
+
 
 def _is_promo(df: pd.DataFrame) -> pd.Series:
     return df["promo_flag"].astype(int)
@@ -104,9 +107,15 @@ def _lead_time_bucket(df: pd.DataFrame) -> pd.Series:
 
 def _price_tier(df: pd.DataFrame) -> pd.Series:
     """Quartile-based price tier within each category."""
+
     def _quartile_label(s: pd.Series) -> pd.Series:
         try:
-            return pd.qcut(s, q=4, labels=["Q1_budget", "Q2_value", "Q3_premium", "Q4_luxury"], duplicates="drop")
+            return pd.qcut(
+                s,
+                q=4,
+                labels=["Q1_budget", "Q2_value", "Q3_premium", "Q4_luxury"],
+                duplicates="drop",
+            )
         except ValueError:
             # Fewer than 4 distinct values → assign a single tier
             return pd.Series("Q1_budget", index=s.index)
@@ -118,15 +127,62 @@ def _price_tier(df: pd.DataFrame) -> pd.Series:
 # Factory
 # ---------------------------------------------------------------------------
 
+
 def default_feature_store() -> FeatureStore:
     """Return a :class:`FeatureStore` pre-loaded with standard FMCG demand-driver features."""
     store = FeatureStore()
-    store.register(Feature("is_promo", ["promo_flag"], _is_promo, "Binary promo indicator"))
-    store.register(Feature("discount_depth", ["discount_pct"], _discount_depth, "Bucketed discount depth"))
-    store.register(Feature("day_type", ["is_weekend", "is_holiday"], _day_type, "weekday / weekend / holiday"))
-    store.register(Feature("temp_bucket", ["temperature"], _temp_bucket, "Temperature bucket: cold/mild/warm/hot"))
-    store.register(Feature("rain_flag", ["rain_mm"], _rain_flag, "Binary: rained on that day"))
-    store.register(Feature("stock_risk", ["stock_out_flag", "stock_on_hand"], _stock_risk, "Inventory risk level"))
-    store.register(Feature("lead_time_bucket", ["lead_time_days"], _lead_time_bucket, "Lead-time bucket: short/medium/long"))
-    store.register(Feature("price_tier", ["list_price", "category"], _price_tier, "Price quartile within category"))
+    store.register(
+        Feature("is_promo", ["promo_flag"], _is_promo, "Binary promo indicator")
+    )
+    store.register(
+        Feature(
+            "discount_depth",
+            ["discount_pct"],
+            _discount_depth,
+            "Bucketed discount depth",
+        )
+    )
+    store.register(
+        Feature(
+            "day_type",
+            ["is_weekend", "is_holiday"],
+            _day_type,
+            "weekday / weekend / holiday",
+        )
+    )
+    store.register(
+        Feature(
+            "temp_bucket",
+            ["temperature"],
+            _temp_bucket,
+            "Temperature bucket: cold/mild/warm/hot",
+        )
+    )
+    store.register(
+        Feature("rain_flag", ["rain_mm"], _rain_flag, "Binary: rained on that day")
+    )
+    store.register(
+        Feature(
+            "stock_risk",
+            ["stock_out_flag", "stock_on_hand"],
+            _stock_risk,
+            "Inventory risk level",
+        )
+    )
+    store.register(
+        Feature(
+            "lead_time_bucket",
+            ["lead_time_days"],
+            _lead_time_bucket,
+            "Lead-time bucket: short/medium/long",
+        )
+    )
+    store.register(
+        Feature(
+            "price_tier",
+            ["list_price", "category"],
+            _price_tier,
+            "Price quartile within category",
+        )
+    )
     return store

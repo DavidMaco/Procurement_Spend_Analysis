@@ -2,11 +2,12 @@
 
 Every recommendation produced by the system is recorded with its full context:
 input snapshot reference, model version, payload, approval status, and timestamps.
-Designed for append-only storage — events are never mutated or deleted.
+Designed for append-only storage with a tamper-evident hash chain.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 from enum import Enum
@@ -41,6 +42,8 @@ class RecommendationEvent(BaseModel):
     approver_id: Optional[str] = None
     action_taken: ActionTaken = ActionTaken.PENDING
     action_timestamp: Optional[str] = None
+    prev_hash: Optional[str] = None
+    entry_hash: Optional[str] = None
 
     model_config = {"frozen": True}
 
@@ -58,6 +61,7 @@ class EventLog:
         file_path: str | Path | None = None,
         archive_path: str | Path | None = None,
     ) -> None:
+        self._genesis_hash = "0" * 64
         self._file_path = Path(file_path) if file_path else None
         self._archive_path = Path(archive_path) if archive_path else None
         self._events: list[RecommendationEvent] = []
@@ -71,10 +75,11 @@ class EventLog:
     def record(self, event: RecommendationEvent) -> str:
         """Append an event and return its event_id."""
         self._sync_from_disk()
-        self._events.append(event)
+        sealed = self._seal_event(event, self._last_hash())
+        self._events.append(sealed)
         self._resolved_events = self._build_resolved_index(self._events)
-        self._append_to_disk(event)
-        return event.event_id
+        self._append_to_disk(sealed)
+        return sealed.event_id
 
     # ------------------------------------------------------------------
     # Read path
@@ -138,23 +143,40 @@ class EventLog:
         timestamps = [event.timestamp for event in self._events]
         return {
             "total_events": len(self._events),
-            "root_recommendations": sum(1 for event in self._events if event.related_event_id is None),
-            "decision_events": sum(1 for event in self._events if event.related_event_id is not None),
+            "root_recommendations": sum(
+                1 for event in self._events if event.related_event_id is None
+            ),
+            "decision_events": sum(
+                1 for event in self._events if event.related_event_id is not None
+            ),
             "action_counts": counts,
             "recommendation_types": recommendation_types,
             "model_ids": model_ids,
+            "integrity_verified": self.verify_integrity(),
+            "chain_head": self._last_hash(),
             "file_path": str(self._file_path) if self._file_path else None,
             "archive_path": str(self._archive_path) if self._archive_path else None,
             "first_event_at": min(timestamps) if timestamps else None,
             "last_event_at": max(timestamps) if timestamps else None,
         }
 
+    def verify_integrity(self) -> bool:
+        """Return whether the current event chain is intact."""
+        self._sync_from_disk()
+        chain = self._genesis_hash
+        for event in self._events:
+            expected_prev = chain
+            expected_hash = self._compute_entry_hash(event, expected_prev)
+            if event.prev_hash != expected_prev or event.entry_hash != expected_hash:
+                return False
+            chain = expected_hash
+        return True
+
     def to_jsonl(self) -> str:
         """Return the current ledger contents as JSONL text."""
         self._sync_from_disk()
         return "\n".join(
-            json.dumps(event.model_dump(mode="json"))
-            for event in self._events
+            json.dumps(event.model_dump(mode="json")) for event in self._events
         ) + ("\n" if self._events else "")
 
     def compact(self) -> int:
@@ -170,8 +192,7 @@ class EventLog:
         self._file_path.parent.mkdir(parents=True, exist_ok=True)
         temp_path = self._file_path.with_suffix(self._file_path.suffix + ".tmp")
         payload = "\n".join(
-            json.dumps(event.model_dump(mode="json"))
-            for event in self._events
+            json.dumps(event.model_dump(mode="json")) for event in self._events
         ) + ("\n" if self._events else "")
         temp_path.write_text(payload, encoding="utf-8")
         temp_path.replace(self._file_path)
@@ -197,7 +218,11 @@ class EventLog:
                 archived_events.extend(events)
 
         if not archived_events:
-            return {"archived_threads": 0, "archived_events": 0, "retained_events": len(self._events)}
+            return {
+                "archived_threads": 0,
+                "archived_events": 0,
+                "retained_events": len(self._events),
+            }
 
         self._append_many_to_archive(archived_events)
         self._events = [
@@ -272,13 +297,28 @@ class EventLog:
             return
 
         loaded: list[RecommendationEvent] = []
+        migrated = False
         for line in self._file_path.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
             loaded.append(RecommendationEvent.model_validate_json(line))
 
-        self._events = loaded
+        normalized: list[RecommendationEvent] = []
+        chain = self._genesis_hash
+        for event in loaded:
+            expected_hash = self._compute_entry_hash(event, chain)
+            if event.prev_hash is None or event.entry_hash is None:
+                event = event.model_copy(
+                    update={"prev_hash": chain, "entry_hash": expected_hash}
+                )
+                migrated = True
+            normalized.append(event)
+            chain = event.entry_hash or expected_hash
+
+        self._events = normalized
         self._resolved_events = self._build_resolved_index(self._events)
+        if migrated:
+            self._rewrite_active_file()
 
     def _append_to_disk(self, event: RecommendationEvent) -> None:
         if self._file_path is None:
@@ -306,7 +346,9 @@ class EventLog:
         self._sync_from_disk()
         if event_id in self._resolved_events:
             prior_action = self.get(self._resolved_events[event_id])
-            resolved_as = prior_action.action_taken.value if prior_action else "resolved"
+            resolved_as = (
+                prior_action.action_taken.value if prior_action else "resolved"
+            )
             raise ValueError(f"Event {event_id} already resolved as {resolved_as}")
 
         for ev in self._events:
@@ -327,8 +369,35 @@ class EventLog:
                     action_taken=action,
                     action_timestamp=datetime.now(timezone.utc).isoformat(),
                 )
-                self._events.append(updated)
+                self.record(updated)
                 self._resolved_events[event_id] = updated.event_id
-                self._append_to_disk(updated)
-                return updated
+                return self.get(updated.event_id) or updated
         raise KeyError(f"Event {event_id} not found")
+
+    def _last_hash(self) -> str:
+        if not self._events:
+            return self._genesis_hash
+        return self._events[-1].entry_hash or self._genesis_hash
+
+    @staticmethod
+    def _payload_dict(event: RecommendationEvent) -> dict[str, Any]:
+        payload = event.model_dump(mode="json")
+        payload.pop("prev_hash", None)
+        payload.pop("entry_hash", None)
+        return payload
+
+    @classmethod
+    def _compute_entry_hash(cls, event: RecommendationEvent, prev_hash: str) -> str:
+        payload = json.dumps(
+            cls._payload_dict(event), sort_keys=True, separators=(",", ":")
+        )
+        return hashlib.sha256(f"{prev_hash}:{payload}".encode("utf-8")).hexdigest()
+
+    @classmethod
+    def _seal_event(
+        cls, event: RecommendationEvent, prev_hash: str
+    ) -> RecommendationEvent:
+        entry_hash = cls._compute_entry_hash(event, prev_hash)
+        return event.model_copy(
+            update={"prev_hash": prev_hash, "entry_hash": entry_hash}
+        )
