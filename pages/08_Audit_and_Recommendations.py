@@ -37,15 +37,59 @@ page_header(
 )
 
 stats = fmcg_recommendation_stats()
-metric_cols = st.columns(4, gap="small")
+integrity_report = get_fmcg_event_log().integrity_report(limit=20)
+metric_cols = st.columns(5, gap="small")
 metric_cols[0].metric("Total events", f"{stats['total_events']}")
 metric_cols[1].metric("Root recommendations", f"{stats['root_recommendations']}")
 metric_cols[2].metric("Decision events", f"{stats['decision_events']}")
 metric_cols[3].metric("Pending", f"{stats['action_counts'].get('pending', 0)}")
+metric_cols[4].metric("Integrity", "Verified" if stats.get("integrity_verified") else "Broken")
+
+if stats.get("integrity_verified"):
+    st.success("Ledger integrity verified. The recommendation chain head matches the recorded event history.")
+else:
+    st.error("Ledger integrity check failed. Review the stored recommendation history before trusting audit outputs.")
 
 st.caption(f"Ledger file: {stats['file_path'] or 'in-memory only'}")
 if stats.get("archive_path"):
     st.caption(f"Archive file: {stats['archive_path']}")
+if stats.get("chain_head"):
+    st.caption(f"Current chain head: {stats['chain_head'][:16]}...")
+
+st.markdown("##### Chain integrity inspector")
+inspector_cols = st.columns([0.2, 0.2, 0.2, 0.4], gap="small")
+inspector_cols[0].metric("Checked links", f"{integrity_report['checked_events']}")
+inspector_cols[1].metric("Broken links", f"{integrity_report['broken_links']}")
+inspector_cols[2].metric("Chain head", integrity_report["chain_head"][:12] if integrity_report.get("chain_head") else "N/A")
+inspector_cols[3].caption(
+    "Recent ledger links with recorded and expected hashes. Any mismatch indicates tampering or corruption in persisted history."
+)
+
+if integrity_report["rows"]:
+    chain_df = pd.DataFrame(integrity_report["rows"])
+    chain_df["status"] = chain_df["link_ok"].map({True: "ok", False: "broken"})
+    chain_df["recorded_prev_hash"] = chain_df["recorded_prev_hash"].fillna("").str[:12]
+    chain_df["expected_prev_hash"] = chain_df["expected_prev_hash"].fillna("").str[:12]
+    chain_df["recorded_entry_hash"] = chain_df["recorded_entry_hash"].fillna("").str[:12]
+    chain_df["expected_entry_hash"] = chain_df["expected_entry_hash"].fillna("").str[:12]
+    st.dataframe(
+        chain_df[[
+            "sequence",
+            "event_id",
+            "action_taken",
+            "recommendation_type",
+            "status",
+            "recorded_prev_hash",
+            "expected_prev_hash",
+            "recorded_entry_hash",
+            "expected_entry_hash",
+        ]],
+        use_container_width=True,
+        hide_index=True,
+        height=260,
+    )
+else:
+    st.info("No chain entries available for integrity inspection yet.")
 
 left, right = st.columns([0.7, 0.3], gap="large")
 with left:

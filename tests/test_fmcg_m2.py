@@ -333,6 +333,10 @@ class TestEventLog:
 
         reloaded = EventLog(log_path)
         assert reloaded.verify_integrity() is False
+        report = reloaded.integrity_report(limit=10)
+        assert report["integrity_verified"] is False
+        assert report["broken_links"] >= 1
+        assert any(row["link_ok"] is False for row in report["rows"])
 
     def test_event_log_archives_resolved_threads(self, tmp_path) -> None:
         log_path = tmp_path / "events.jsonl"

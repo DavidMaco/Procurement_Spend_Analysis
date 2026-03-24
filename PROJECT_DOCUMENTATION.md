@@ -37,7 +37,7 @@ What makes this project unique:
 - It is not just a report or a dashboard. It is a **complete intelligence engine** — it generates data, validates it, analyzes it, runs mathematical optimization, simulates uncertainty with 10,000 scenarios, and produces specific recommendations on which suppliers to use and how much to allocate to each.
 - It is built as a **multi-tenant SaaS platform** — meaning multiple companies can each use it simultaneously, with their data completely isolated from each other, and with a billing and subscription system built in.
 - It includes **AI-powered anomaly detection and demand forecasting** — the system uses machine learning to automatically spot unusual spending patterns and predict future demand.
-- It has a **full audit trail** — every recommendation the system makes, and every approval or rejection by a human, is permanently recorded in a tamper-proof log (like a blockchain for procurement decisions).
+- It has a **full audit trail** — every recommendation the system makes, and every approval or rejection by a human, is permanently recorded in a tamper-evident log with integrity verification.
 
 ---
 
@@ -81,9 +81,9 @@ The CFO asks: "If we implement all your recommendations, how much will we save?"
 
 ### Problem 6: "We have no record of who approved what"
 
-A recommendation was made to switch from Supplier X to Supplier Y. Six months later, Supplier Y has quality issues and someone asks: "Who approved that switch? What data was it based on? When was it decided?" Nobody has a clear, tamper-proof record.
+A recommendation was made to switch from Supplier X to Supplier Y. Six months later, Supplier Y has quality issues and someone asks: "Who approved that switch? What data was it based on? When was it decided?" Nobody has a clear, integrity-verifiable record.
 
-> **This is the Audit Trail problem.** Our platform records every recommendation, every approval, every rejection — in a permanent, hash-chained ledger that cannot be tampered with.
+> **This is the Audit Trail problem.** Our platform records every recommendation, every approval, every rejection — in a permanent, hash-chained ledger where tampering is detectable through integrity verification.
 
 ---
 
@@ -212,7 +212,7 @@ Here are the specific questions a procurement leader, CFO, or supply chain manag
 ### Forecasting & Intelligence
 | # | Question | Where to Find the Answer |
 |---|----------|--------------------------|
-| 18 | **What will demand look like next quarter?** | Intelligence API — Demand Forecast endpoint |
+| 18 | **What will demand look like next quarter?** | Intelligence API — Demand Forecast endpoint and Intelligence Summary forecasts |
 | 19 | **Are there any unusual spending patterns?** (anomalies) | Intelligence API — Anomaly Detection endpoint |
 | 20 | **What is each supplier's risk score?** (multi-factor analysis) | Intelligence API — Risk Scores endpoint |
 
@@ -403,7 +403,7 @@ The platform doesn't auto-implement anything (that would be dangerous). Instead:
 
 1. A recommendation is logged in the **event ledger** (e.g., "Switch 30% of Raw Materials spend from Supplier X to Supplier Y")
 2. An **approver** reviews the recommendation, sees the supporting data, and either **approves** or **rejects** it
-3. Every action is permanently recorded with a timestamp, the person's ID, and a hash that chains to the previous entry (tamper-proof)
+3. Every action is permanently recorded with a timestamp, the person's ID, and a hash that chains to the previous entry (tamper-evident and integrity-verifiable)
 4. Alerts fire if any KPI drifts beyond acceptable thresholds — for example, if a recommended supplier starts underperforming
 
 ---
@@ -534,7 +534,7 @@ This section describes, in chronological order, every step taken to build the Ae
     - **Data Classification** — auto-classifies fields into 4 sensitivity levels (Public, Internal, Confidential, Restricted) based on naming conventions
     - **Hash-Chain Audit Log** — every audit entry is linked to the previous one via SHA-256 hash, creating a tamper-evident chain (like a simplified blockchain)
     - **GDPR Service** — handles Data Subject Access Requests (DSARs): access, erasure, portability, and rectification workflows
-    - **Encryption Service** — envelope encryption with PBKDF2 key derivation
+    - **Encryption Service** — AES-256-GCM application-layer encryption with PBKDF2-derived per-context keys
     - **SOC 2 Compliance Checker** — automated assessment of 14 controls (CC1–CC9) with evidence collection and compliance scoring
 
 ### Phase 9: Infrastructure & Deployment
@@ -582,7 +582,7 @@ This section describes, in chronological order, every step taken to build the Ae
 
 **Goal:** Verify everything works and keep it working.
 
-52. **190 automated tests across 14+ test files**, covering:
+52. **194 automated tests across 14+ test files**, covering:
     - Data validation and schema enforcement
     - Financial reconciliation rules
     - Optimization engine outputs
@@ -721,6 +721,7 @@ This section describes, in chronological order, every step taken to build the Ae
 - Recommendation volume over time
 - Decision breakdown (how many approved vs. rejected vs. pending)
 - Approval latency distribution (how long decisions take)
+- Recent hash-chain link inspector with recorded vs. expected hashes
 - Complete searchable history
 - JSONL export for external audit tools
 **Key insight:** "47 recommendations logged this quarter. Average approval time: 3.2 days. 0 integrity violations detected."
@@ -835,7 +836,7 @@ Every code change goes through a 5-stage automated pipeline:
 |-------|-----------|-------------|
 | **In Transit** | TLS 1.3 | All data encrypted between browser and server |
 | **At Rest** | AES-256 via KMS | All database and S3 data encrypted with AWS managed keys |
-| **Application** | Envelope Encryption | Sensitive fields encrypted with PBKDF2-derived keys |
+| **Application** | AES-256-GCM | Sensitive application payloads encrypted with PBKDF2-derived per-context keys |
 | **PII** | Automatic Masking | Email, phone, credit card patterns detected and redacted |
 
 ### Audit Trail
@@ -848,7 +849,7 @@ Entry #2: { action: "DATA_UPLOAD", actor: "user_42", timestamp: "2024-03-15T09:0
 Entry #3: { action: "RECOMMENDATION_APPROVED", actor: "user_17", timestamp: "2024-03-15T14:30:00Z", prev_hash: "d4e5f6...", hash: "g7h8i9..." }
 ```
 
-Each entry's hash is computed from its own contents plus the previous entry's hash. If anyone modifies Entry #2 after the fact, Entry #3's hash won't match — and `verify_integrity()` will detect the tampering.
+Each entry's hash is computed from its own contents plus the previous entry's hash. If anyone modifies Entry #2 after the fact, Entry #3's hash won't match — and integrity verification will detect the tampering.
 
 ### GDPR Compliance
 
@@ -892,16 +893,16 @@ The platform calculates a **compliance score** (0–100%) based on how many cont
 
 | Test Area | File | Tests | What's Verified |
 |-----------|------|-------|----------------|
-| API Endpoints | test_api_app.py | 7 | Health check, CORS, metrics, error handling |
+| API Endpoints | test_api_app.py | 10 | Health check, CORS, metrics, FMCG event lifecycle, SaaS intelligence responses |
 | Authentication | test_auth.py | 15 | JWT encode/decode, API keys, rate limiting |
 | Benchmark | test_benchmark_profile.py | 1 | Performance regression detection |
 | Billing | test_billing.py | 19 | Plans, subscriptions, usage, invoices |
 | CLI Pipeline | test_cli.py | 1 | End-to-end command-line execution |
-| Compliance | test_compliance.py | 25 | PII masking, audit chain, GDPR, encryption |
+| Compliance | test_compliance.py | 26 | PII masking, audit chain, GDPR, encryption, ciphertext tamper detection |
 | Optimization | test_constrained_optimization.py | 3 | Constrained solver correctness |
 | Dashboard Data | test_dashboard_data.py | 13 | Normalization, analytics, export |
 | FMCG Foundation | test_fmcg_foundation.py | 12 | Models, reconciliation, metrics, features |
-| FMCG Milestone 2 | test_fmcg_m2.py | 30 | KPIs, pilot, RBAC, event log, alerts, API |
+| FMCG Milestone 2 | test_fmcg_m2.py | 31 | KPIs, pilot, RBAC, event log, alerts, API, ledger tamper detection |
 | Data Integrity | test_integrity_regression.py | 2 | End-to-end data pipeline integrity |
 | Intelligence | test_intelligence.py | 13 | Anomalies, forecasting, risk, insights |
 | Math Optimization | test_mathematical_optimization.py | 1 | MILP solver correctness |
@@ -913,9 +914,9 @@ The platform calculates a **compliance score** (0–100%) based on how many cont
 | Streaming | test_streaming.py | 16 | Event bus, SSE, webhooks, signing |
 | Tenant | test_tenant.py | 14 | Context vars, registry, tiers, isolation |
 | Validation & Security | test_validation_security.py | 3 | Schema validation, filename sanitization, payload safety |
-| **TOTAL** | **14+ files** | **190** | |
+| **TOTAL** | **14+ files** | **194** | |
 
-All 190 tests pass. The CI pipeline requires ≥80% code coverage; any test failure blocks deployment.
+All 194 tests pass. The CI pipeline requires ≥80% code coverage; any test failure blocks deployment.
 
 ---
 
@@ -960,7 +961,7 @@ All 190 tests pass. The CI pipeline requires ≥80% code coverage; any test fail
 | Python Modules | 25+ |
 | API Endpoints | 35+ (15 FMCG + 20 SaaS) |
 | Dashboard Pages | 8 |
-| Automated Tests | 190 |
+| Automated Tests | 194 |
 | Pricing Tiers | 4 |
 | ML Algorithms | 5 |
 | Compliance Controls | 14 (SOC 2) |

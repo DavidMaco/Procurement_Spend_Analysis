@@ -58,7 +58,11 @@ def _get_jwt_service() -> JWTService:
     if _jwt_service is None:
         import os
 
-        secret = os.environ.get("JWT_SECRET", "dev-secret-change-in-production")
+        secret = os.environ.get("JWT_SECRET")
+        if not secret:
+            raise RuntimeError(
+                "JWT_SECRET environment variable must be set before starting the server."
+            )
         _jwt_service = JWTService(secret=secret)
     return _jwt_service
 
@@ -254,8 +258,13 @@ def create_api_key(
 
 
 @router.get("/auth/api-keys", response_model=list[APIKeyResponse])
-def list_api_keys(claims: AuthClaims) -> list[APIKeyResponse]:
+def list_api_keys(
+    claims: AuthClaims,
+    limit: int = Query(default=50, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> list[APIKeyResponse]:
     keys = _api_key_service.list_for_tenant(claims.tenant_id)
+    page = keys[offset : offset + limit]
     return [
         APIKeyResponse(
             key_id=k.key_id,
@@ -264,7 +273,7 @@ def list_api_keys(claims: AuthClaims) -> list[APIKeyResponse]:
             scopes=k.scopes,
             created_at=k.created_at,
         )
-        for k in keys
+        for k in page
     ]
 
 
@@ -462,8 +471,13 @@ def register_webhook(body: WebhookCreateRequest, claims: AuthClaims) -> WebhookR
 
 
 @router.get("/webhooks", response_model=list[WebhookResponse])
-def list_webhooks(claims: AuthClaims) -> list[WebhookResponse]:
+def list_webhooks(
+    claims: AuthClaims,
+    limit: int = Query(default=50, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> list[WebhookResponse]:
     endpoints = get_webhook_service().list_for_tenant(claims.tenant_id)
+    page = endpoints[offset : offset + limit]
     return [
         WebhookResponse(
             webhook_id=ep.webhook_id,
@@ -473,7 +487,7 @@ def list_webhooks(claims: AuthClaims) -> list[WebhookResponse]:
             created_at=ep.created_at,
             description=ep.description,
         )
-        for ep in endpoints
+        for ep in page
     ]
 
 
@@ -564,8 +578,13 @@ def get_usage(claims: AuthClaims) -> dict[str, Any]:
 
 
 @router.get("/billing/invoices")
-def list_invoices(claims: AuthClaims) -> dict[str, Any]:
+def list_invoices(
+    claims: AuthClaims,
+    limit: int = Query(default=50, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> dict[str, Any]:
     invoices = _billing_service.list_invoices(claims.tenant_id)
+    page = invoices[offset : offset + limit]
     return {
         "invoices": [
             {
@@ -575,6 +594,9 @@ def list_invoices(claims: AuthClaims) -> dict[str, Any]:
                 "currency": inv.currency,
                 "status": inv.status,
             }
-            for inv in invoices
-        ]
+            for inv in page
+        ],
+        "total": len(invoices),
+        "offset": offset,
+        "limit": limit,
     }
