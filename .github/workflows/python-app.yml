@@ -1,0 +1,105 @@
+name: Python Standards Governance
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  standards-governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify standards baseline files exist
+        run: |
+          required_files=(
+            ".github/copilot-instructions.md"
+            ".github/instructions/api-ops.instructions.md"
+            ".github/instructions/frontend-quality.instructions.md"
+            ".github/instructions/execution-workflow.instructions.md"
+            ".github/instructions/security.instructions.md"
+            ".github/instructions/documentation.instructions.md"
+            ".github/skills/plan-execute-verify/SKILL.md"
+            ".github/skills/standards-review/SKILL.md"
+            "AGENTS.md"
+            "docs/STANDARDS_IMPLEMENTATION.md"
+            "docs/SKILLS_IMPLEMENTATION.md"
+            "docs/ROLLOUT_IMPLEMENTATION.md"
+          )
+
+          missing=0
+          for path in "${required_files[@]}"; do
+            if [ ! -f "$path" ]; then
+              echo "Missing required standards file: $path"
+              missing=1
+            fi
+          done
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Security pattern scan
+        run: |
+          python - <<'EOF'
+          import re
+          import sys
+          from pathlib import Path
+
+          PATTERNS = [
+              (
+                  re.compile(
+                      r'os\.environ\.get\s*\([^)]+,\s*["\'][^"\']{0,6}'
+                      r'(secret|password|token|key|dev-|change-me|placeholder)'
+                      r'[^"\']*["\']\)',
+                      re.I,
+                  ),
+                  "Hardcoded fallback for secret env var in os.environ.get()",
+              ),
+              (
+                  re.compile(
+                      r'raise\s+HTTPException\b[^\n]*\bdetail\s*=\s*str\s*\(\s*exc\s*\)'
+                  ),
+                  "Raw exception text exposed via HTTPException detail=str(exc)",
+              ),
+              (
+                  re.compile(
+                      r'allow_origins\s*=\s*\[\s*["\']?\*["\']?\s*\]'
+                  ),
+                  "CORS wildcard allow_origins=[\"*\"] is forbidden",
+              ),
+          ]
+
+          EXCLUDE_DIRS = {".venv", "venv", "node_modules", ".git", "__pycache__"}
+
+          errors = []
+          for py_file in Path(".").rglob("*.py"):
+              if any(p in py_file.parts for p in EXCLUDE_DIRS):
+                  continue
+              text = py_file.read_text(errors="ignore")
+              for pattern, msg in PATTERNS:
+                  for match in pattern.finditer(text):
+                      line_no = text[: match.start()].count("\n") + 1
+                      errors.append(f"{py_file}:{line_no}: {msg}")
+
+          if errors:
+              print("SECURITY PATTERN SCAN - FAIL")
+              for e in errors:
+                  print(f"  {e}")
+              sys.exit(1)
+          print("Security pattern scan: OK")
+          EOF
+
+      - name: Markdown lint standards files
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          globs: |
+            AGENTS.md
+            .github/copilot-instructions.md
+            .github/instructions/**/*.md
+            .github/skills/**/SKILL.md
+            docs/STANDARDS_IMPLEMENTATION.md
+            docs/SKILLS_IMPLEMENTATION.md
+            docs/ROLLOUT_IMPLEMENTATION.md
