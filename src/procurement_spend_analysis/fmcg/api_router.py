@@ -93,9 +93,9 @@ def require_permission(permission: Permission):
             access = build_scoped_access_control(x_user_id, role_names)
             access.require_permission(x_user_id, permission)
         except KeyError as exc:
-            raise HTTPException(status_code=401, detail=str(exc)) from exc
+            raise HTTPException(status_code=401, detail="Unauthorized") from exc
         except PermissionError as exc:
-            raise HTTPException(status_code=403, detail=str(exc)) from exc
+            raise HTTPException(status_code=403, detail="Permission denied") from exc
         return x_user_id
 
     return _dependency
@@ -338,9 +338,9 @@ def approve_recommendation(
     try:
         event = _EVENT_LOG.approve(event_id, payload.approver_id)
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=404, detail="Recommendation not found") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise HTTPException(status_code=409, detail="Recommendation already decided") from exc
     return event.model_dump()
 
 
@@ -356,7 +356,7 @@ def reject_recommendation(
     try:
         event = _EVENT_LOG.reject(event_id, payload.approver_id)
     except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise HTTPException(status_code=404, detail="Recommendation not found") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise HTTPException(status_code=409, detail="Recommendation already decided") from exc
     return event.model_dump()

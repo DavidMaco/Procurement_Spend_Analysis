@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 
-from fastapi import FastAPI, File, HTTPException, Request, Response, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -23,12 +23,33 @@ from procurement_spend_analysis.observability import (
     metrics_payload,
     record_request_metrics,
 )
-from procurement_spend_analysis.security import sanitize_filename, validate_text_payload
+from procurement_spend_analysis.security import (
+    IPRateLimiter,
+    sanitize_filename,
+    validate_text_payload,
+)
 
 
 settings = get_settings()
 configure_logging(settings.log_level)
 logger = get_logger(__name__)
+
+_ip_rate_limiter = IPRateLimiter(rate_per_minute=30)
+
+
+def _public_rate_limit(request: Request) -> None:
+    """IP-based token-bucket rate limit for unauthenticated write endpoints."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    ip = (
+        forwarded.split(",")[0].strip()
+        if forwarded
+        else (request.client.host if request.client else "unknown")
+    )
+    try:
+        _ip_rate_limiter.check(ip)
+    except ValueError:
+        raise HTTPException(status_code=429, detail="Too many requests")
+
 
 app = FastAPI(
     title="Procurement Intelligence SaaS API", version=settings.package_version
@@ -88,11 +109,7 @@ async def instrument_requests(request: Request, call_next):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {
-        "status": "ok",
-        "service": settings.app_name,
-        "environment": settings.environment,
-    }
+    return {"status": "ok"}
 
 
 @app.get("/metrics")
@@ -101,7 +118,10 @@ def metrics() -> Response:
 
 
 @app.post("/analytics/demo")
-def analytics_demo(payload: DemoRequest) -> dict:
+def analytics_demo(
+    payload: DemoRequest,
+    _rate: None = Depends(_public_rate_limit),
+) -> dict:
     bundle = generate_demo_bundle(
         num_orders=payload.num_orders,
         seed=payload.seed,
@@ -117,7 +137,10 @@ def analytics_demo(payload: DemoRequest) -> dict:
 
 
 @app.post("/analytics/upload")
-async def analytics_upload(files: list[UploadFile] = File(...)) -> dict:
+async def analytics_upload(
+    files: list[UploadFile] = File(...),
+    _rate: None = Depends(_public_rate_limit),
+) -> dict:
     uploaded: dict[str, bytes] = {}
     for file in files:
         safe_name = sanitize_filename(file.filename or "upload.csv")
@@ -130,12 +153,19 @@ async def analytics_upload(files: list[UploadFile] = File(...)) -> dict:
     try:
         bundle = build_bundle_from_upload_bytes(uploaded)
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        logger.warning("Upload processing failed", extra={"error": str(exc)})
+        raise HTTPException(
+            status_code=400,
+            detail="Upload processing failed. Check file format and content.",
+        ) from exc
     return {"metadata": bundle["metadata"], "insights": bundle["insights"]}
 
 
 @app.post("/ml/forecast")
-def ml_forecast(payload: DemoRequest) -> dict:
+def ml_forecast(
+    payload: DemoRequest,
+    _rate: None = Depends(_public_rate_limit),
+) -> dict:
     bundle = generate_demo_bundle(
         payload.num_orders, payload.seed, payload.num_quality_incidents
     )
@@ -144,7 +174,10 @@ def ml_forecast(payload: DemoRequest) -> dict:
 
 
 @app.post("/ml/anomalies")
-def ml_anomalies(payload: DemoRequest) -> dict:
+def ml_anomalies(
+    payload: DemoRequest,
+    _rate: None = Depends(_public_rate_limit),
+) -> dict:
     bundle = generate_demo_bundle(
         payload.num_orders, payload.seed, payload.num_quality_incidents
     )
