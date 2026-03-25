@@ -340,7 +340,9 @@ def approve_recommendation(
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Recommendation not found") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail="Recommendation already decided") from exc
+        raise HTTPException(
+            status_code=409, detail="Recommendation already decided"
+        ) from exc
     return event.model_dump()
 
 
@@ -358,5 +360,7 @@ def reject_recommendation(
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Recommendation not found") from exc
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail="Recommendation already decided") from exc
+        raise HTTPException(
+            status_code=409, detail="Recommendation already decided"
+        ) from exc
     return event.model_dump()
