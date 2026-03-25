@@ -37,9 +37,9 @@ from procurement_spend_analysis.streaming import (
 )
 from procurement_spend_analysis.tenant import Tenant, TenantRegistry, TenantTier
 
-# ═════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════
 # Singletons (instantiated once, injected via Depends)
-# ═════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════
 
 _jwt_service: JWTService | None = None
 _tenant_registry = TenantRegistry()
@@ -67,9 +67,9 @@ def _get_jwt_service() -> JWTService:
     return _jwt_service
 
 
-# ═════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════
 # FastAPI Dependencies
-# ═════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════
 
 
 async def _extract_claims(request: Request) -> JWTClaims:
@@ -117,9 +117,9 @@ async def _enforce_rate_limit(
 # Type alias for convenience
 AuthClaims = Annotated[JWTClaims, Depends(_enforce_rate_limit)]
 
-# ═════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════
 # Router
-# ═════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════
 
 router = APIRouter(prefix="/v1", tags=["saas-v1"])
 
@@ -491,9 +491,10 @@ def list_webhooks(
     ]
 
 
-@router.delete("/webhooks/{webhook_id}", status_code=204)
-def delete_webhook(webhook_id: str, claims: AuthClaims) -> None:
+@router.delete("/webhooks/{webhook_id}", status_code=200)
+def delete_webhook(webhook_id: str, claims: AuthClaims) -> dict[str, str]:
     get_webhook_service().delete(webhook_id)
+    return {"status": "deleted"}
 
 
 # ───────────────────────── Billing ─────────────────────────

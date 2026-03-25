@@ -1,10 +1,14 @@
 import asyncio
 import logging
+import os
 import uuid
 from io import BytesIO
 
 import httpx
 import pandas as pd
+
+if not os.environ.get("JWT_SECRET"):
+    os.environ["JWT_SECRET"] = "x" * 64
 
 from procurement_spend_analysis.api.app import app
 
@@ -232,6 +236,36 @@ def test_fmcg_event_stats_include_integrity_fields():
     payload = response.json()
     assert payload["integrity_verified"] is True
     assert len(payload["chain_head"]) == 64
+
+
+def test_fmcg_event_integrity_endpoint_returns_recent_links():
+    create_response = _request(
+        "POST",
+        "/fmcg/events/recommendations",
+        headers=_headers("analyst"),
+        json={
+            "model_id": "promo_v4",
+            "model_version": "2.3.0",
+            "input_snapshot_ref": "s3://bucket/snap_004.parquet",
+            "recommendation_type": "promo_depth",
+            "recommendation_payload": {"sku": "SKU-9", "discount": 0.15},
+            "confidence_score": 0.88,
+        },
+    )
+    assert create_response.status_code == 200
+
+    response = _request(
+        "GET",
+        "/fmcg/events/integrity?limit=5",
+        headers=_headers("admin"),
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["integrity_verified"] is True
+    assert payload["checked_events"] >= 1
+    assert payload["broken_links"] == 0
+    assert len(payload["rows"]) >= 1
+    assert payload["rows"][-1]["link_ok"] is True
 
 
 def test_saas_intelligence_summary_includes_forecasts():
