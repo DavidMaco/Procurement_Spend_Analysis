@@ -172,6 +172,46 @@ class EventLog:
             chain = expected_hash
         return True
 
+    def integrity_report(self, limit: int = 25) -> dict[str, Any]:
+        """Return a recent chain-inspection report for operator review."""
+        self._sync_from_disk()
+        chain = self._genesis_hash
+        rows: list[dict[str, Any]] = []
+
+        for index, event in enumerate(self._events, start=1):
+            expected_prev = chain
+            expected_hash = self._compute_entry_hash(event, expected_prev)
+            link_ok = (
+                event.prev_hash == expected_prev and event.entry_hash == expected_hash
+            )
+            rows.append(
+                {
+                    "sequence": index,
+                    "event_id": event.event_id,
+                    "root_event_id": self._root_event_id(event),
+                    "related_event_id": event.related_event_id,
+                    "recommendation_type": event.recommendation_type,
+                    "action_taken": event.action_taken.value,
+                    "timestamp": event.action_timestamp or event.timestamp,
+                    "recorded_prev_hash": event.prev_hash,
+                    "expected_prev_hash": expected_prev,
+                    "recorded_entry_hash": event.entry_hash,
+                    "expected_entry_hash": expected_hash,
+                    "link_ok": link_ok,
+                }
+            )
+            chain = event.entry_hash or expected_hash
+
+        recent_rows = rows[-limit:] if limit > 0 else rows
+        return {
+            "integrity_verified": all(row["link_ok"] for row in rows),
+            "chain_head": self._last_hash(),
+            "total_events": len(rows),
+            "checked_events": len(recent_rows),
+            "broken_links": sum(1 for row in rows if not row["link_ok"]),
+            "rows": recent_rows,
+        }
+
     def to_jsonl(self) -> str:
         """Return the current ledger contents as JSONL text."""
         self._sync_from_disk()
