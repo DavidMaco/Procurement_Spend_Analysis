@@ -62,7 +62,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "--cov=src/procurement_spend_analysis --cov=dashboard_data --cov=optimization_engine --cov=constrained_optimization --cov-report=term-missing --cov-report=xml --cov-fail-under=80"
+addopts = "--basetemp=.pytest-tmp --cov=src/procurement_spend_analysis --cov=dashboard_data --cov=optimization_engine --cov=constrained_optimization --cov-report=term-missing --cov-report=xml --cov-fail-under=80"
 testpaths = ["tests"]
 
 [tool.coverage.run]

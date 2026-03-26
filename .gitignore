@@ -19,6 +19,7 @@ dist/
 
 # Test and coverage
 .pytest_cache/
+.pytest-tmp*/
 .hypothesis/
 .coverage
 .coverage.*
