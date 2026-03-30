@@ -36,6 +36,7 @@ class VarianceRule:
     category: AlertCategory
     threshold_pct: float
     metric_fn: Optional[Callable[[pd.DataFrame], pd.Series]] = None
+    required_columns: frozenset[str] = field(default_factory=frozenset)
     severity: AlertSeverity = AlertSeverity.WARNING
     aggregation: str = "mean"  # "mean" | "sum" | "median"
     group_by: list[str] = field(default_factory=list)
@@ -115,6 +116,13 @@ class VarianceAlertEngine:
             return rule.metric_fn(df)
         return df[rule.metric_column]
 
+    @staticmethod
+    def _has_required_columns(rule: VarianceRule, df: pd.DataFrame) -> bool:
+        required = set(rule.group_by) | set(rule.required_columns)
+        if rule.metric_fn is None:
+            required.add(rule.metric_column)
+        return required.issubset(df.columns)
+
     def _evaluate_scalar(
         self,
         rule: VarianceRule,
@@ -122,6 +130,10 @@ class VarianceAlertEngine:
         current_df: pd.DataFrame,
         now: str,
     ) -> Optional[Alert]:
+        if not self._has_required_columns(
+            rule, baseline_df
+        ) or not self._has_required_columns(rule, current_df):
+            return None
         base_val = self._agg(self._metric_values(rule, baseline_df), rule.aggregation)
         curr_val = self._agg(self._metric_values(rule, current_df), rule.aggregation)
         return self._maybe_fire(rule, base_val, curr_val, None, now)
@@ -134,6 +146,10 @@ class VarianceAlertEngine:
         now: str,
     ) -> list[Alert]:
         alerts: list[Alert] = []
+        if not self._has_required_columns(
+            rule, baseline_df
+        ) or not self._has_required_columns(rule, current_df):
+            return alerts
         baseline_metrics = baseline_df.assign(
             _metric_value=self._metric_values(rule, baseline_df)
         )
@@ -223,6 +239,7 @@ def default_variance_engine() -> VarianceAlertEngine:
             category=AlertCategory.COMMERCIAL,
             threshold_pct=15.0,
             metric_fn=_gross_to_net_leakage,
+            required_columns=frozenset({"gross_sales", "net_sales", "category"}),
             severity=AlertSeverity.WARNING,
             aggregation="mean",
             group_by=["category"],
@@ -248,6 +265,7 @@ def default_variance_engine() -> VarianceAlertEngine:
             metric_column="purchase_cost",
             category=AlertCategory.PROCUREMENT,
             threshold_pct=5.0,
+            required_columns=frozenset({"supplier_id", "purchase_cost"}),
             severity=AlertSeverity.WARNING,
             aggregation="mean",
             group_by=["supplier_id"],
@@ -260,6 +278,7 @@ def default_variance_engine() -> VarianceAlertEngine:
             metric_column="lead_time_days",
             category=AlertCategory.PROCUREMENT,
             threshold_pct=20.0,
+            required_columns=frozenset({"supplier_id", "lead_time_days"}),
             severity=AlertSeverity.WARNING,
             aggregation="mean",
             group_by=["supplier_id"],
