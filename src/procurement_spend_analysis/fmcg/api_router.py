@@ -190,11 +190,7 @@ async def run_pilot_selection(
     try:
         validate_fmcg_dataframe(df)
     except Exception as exc:
-        raise HTTPException(
-            status_code=422, detail=f"Schema validation failed: {exc}"
-        ) from exc
-
-    cohort: PilotCohort = select_pilot_cohort(df)
+        raise HTTPException(status_code=422, detail="Schema validation failed") from exc
     return cohort.model_dump()
 
 
@@ -213,11 +209,11 @@ async def evaluate_pilot_selection(
             intervention_date=intervention_date,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except Exception as exc:
         raise HTTPException(
-            status_code=422, detail=f"Schema validation failed: {exc}"
+            status_code=422, detail="Validation error in uploaded data"
         ) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="Schema validation failed") from exc
 
     return report.model_dump()
 

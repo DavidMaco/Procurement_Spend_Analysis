@@ -6,6 +6,7 @@ from a baseline period, and emits structured alerts.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -173,7 +174,7 @@ class VarianceAlertEngine:
         group_key: Optional[dict[str, str]],
         now: str,
     ) -> Optional[Alert]:
-        if base_val == 0:
+        if base_val == 0 or not math.isfinite(base_val) or not math.isfinite(curr_val):
             return None
         variance_pct = (curr_val - base_val) / abs(base_val) * 100
         if abs(variance_pct) < rule.threshold_pct:
@@ -209,6 +210,8 @@ def default_variance_engine() -> VarianceAlertEngine:
     engine = VarianceAlertEngine()
 
     def _gross_to_net_leakage(df: pd.DataFrame) -> pd.Series:
+        if "gross_sales" not in df.columns or "net_sales" not in df.columns:
+            return pd.Series(float("nan"), index=df.index, dtype=float)
         gross = df["gross_sales"].replace(0, float("nan"))
         return (df["gross_sales"] - df["net_sales"]) / gross
 

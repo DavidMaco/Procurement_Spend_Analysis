@@ -122,8 +122,11 @@ def require_fmcg_dashboard_access(
     access = build_scoped_access_control(principal["user_id"], principal["roles"])
     try:
         access.require_permission(principal["user_id"], permission)
-    except (KeyError, PermissionError) as exc:
-        st.error(str(exc))
+    except (KeyError, PermissionError):
+        st.error(
+            f"⛔ This page requires a higher-privilege role. "
+            f"Select a role with the required access in the sidebar and click **Apply access**."
+        )
         st.stop()
 
     st.sidebar.caption(

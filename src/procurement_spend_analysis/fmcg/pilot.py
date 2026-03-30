@@ -186,14 +186,18 @@ def _prepare_pilot_frame(df: pd.DataFrame, cohort: PilotCohort) -> pd.DataFrame:
         lambda store_id: (
             "control"
             if store_id in cohort.control_stores
-            else "treatment" if store_id in cohort.treatment_stores else "excluded"
+            else "treatment"
+            if store_id in cohort.treatment_stores
+            else "excluded"
         )
     )
     scoped = scoped[scoped["arm"] != "excluded"].copy()
     scoped["purchase_cost_total"] = scoped["purchase_cost"] * scoped["units_sold"]
     scoped["contribution_margin"] = scoped["net_sales"] - scoped["purchase_cost_total"]
     gross = scoped["gross_sales"].replace(0, float("nan"))
-    scoped["gross_to_net_leakage_pct"] = ((scoped["gross_sales"] - scoped["net_sales"]) / gross) * 100
+    scoped["gross_to_net_leakage_pct"] = (
+        (scoped["gross_sales"] - scoped["net_sales"]) / gross
+    ) * 100
     return scoped
 
 
@@ -220,7 +224,9 @@ def _summarize_arm_period(
     arm: Literal["control", "treatment"],
     period: Literal["pre", "post"],
 ) -> PilotArmSummary:
-    frame = scoped_df[(scoped_df["arm"] == arm) & (scoped_df["period"] == period)].copy()
+    frame = scoped_df[
+        (scoped_df["arm"] == arm) & (scoped_df["period"] == period)
+    ].copy()
     if frame.empty:
         raise ValueError(f"Pilot evaluation requires non-empty {arm} {period} data")
 
@@ -233,7 +239,9 @@ def _summarize_arm_period(
     units_sold = int(frame["units_sold"].sum())
     purchase_cost_total = float(frame["purchase_cost_total"].sum())
     contribution_margin = float(frame["contribution_margin"].sum())
-    leakage_pct = ((gross_sales - net_sales) / gross_sales * 100) if gross_sales else 0.0
+    leakage_pct = (
+        ((gross_sales - net_sales) / gross_sales * 100) if gross_sales else 0.0
+    )
     purchase_cost_per_unit = purchase_cost_total / units_sold if units_sold else 0.0
 
     return PilotArmSummary(
@@ -278,7 +286,11 @@ def _build_metric_impact(
     if treatment_pre != 0:
         incremental_lift_pct = (incremental_lift / abs(treatment_pre)) * 100
 
-    favorable_movement = incremental_lift > 0 if direction == "higher_is_better" else incremental_lift < 0
+    favorable_movement = (
+        incremental_lift > 0
+        if direction == "higher_is_better"
+        else incremental_lift < 0
+    )
     return PilotMetricImpact(
         metric=metric,
         direction=direction,
@@ -358,7 +370,9 @@ def evaluate_pilot_impact(
         ),
     ]
     primary_metric = next(
-        impact for impact in metric_impacts if impact.metric == "net_sales_per_store_day"
+        impact
+        for impact in metric_impacts
+        if impact.metric == "net_sales_per_store_day"
     )
 
     pre_dates = scoped.loc[scoped["period"] == "pre", "date"]
@@ -366,8 +380,14 @@ def evaluate_pilot_impact(
     return PilotImpactReport(
         cohort=cohort,
         intervention_start_date=intervention_start.date().isoformat(),
-        pre_period=(pre_dates.min().date().isoformat(), pre_dates.max().date().isoformat()),
-        post_period=(post_dates.min().date().isoformat(), post_dates.max().date().isoformat()),
+        pre_period=(
+            pre_dates.min().date().isoformat(),
+            pre_dates.max().date().isoformat(),
+        ),
+        post_period=(
+            post_dates.min().date().isoformat(),
+            post_dates.max().date().isoformat(),
+        ),
         arm_summaries=summaries,
         metric_impacts=metric_impacts,
         primary_metric=primary_metric.metric,

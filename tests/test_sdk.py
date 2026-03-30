@@ -89,7 +89,9 @@ class TestAPIError:
 # ---------------------------------------------------------------------------
 
 
-def _make_transport(api_key: str | None = None, access_token: str | None = None, max_retries: int = 2) -> _HTTPTransport:
+def _make_transport(
+    api_key: str | None = None, access_token: str | None = None, max_retries: int = 2
+) -> _HTTPTransport:
     cfg = SDKConfig(
         base_url="http://localhost:8000",
         api_key=api_key,
@@ -126,12 +128,16 @@ class TestHTTPTransportHeaders:
 class TestHTTPTransportRequest:
     def test_successful_get(self) -> None:
         t = _make_transport(api_key="k")
-        with patch.object(urllib.request, "urlopen", return_value=_mock_response({"ok": True})):
+        with patch.object(
+            urllib.request, "urlopen", return_value=_mock_response({"ok": True})
+        ):
             assert t.get("/v1/health") == {"ok": True}
 
     def test_successful_post(self) -> None:
         t = _make_transport(api_key="k")
-        with patch.object(urllib.request, "urlopen", return_value=_mock_response({"id": "t_1"})):
+        with patch.object(
+            urllib.request, "urlopen", return_value=_mock_response({"id": "t_1"})
+        ):
             assert t.post("/v1/tenants", {"name": "Acme"}) == {"id": "t_1"}
 
     def test_successful_post_no_body(self) -> None:
@@ -141,13 +147,19 @@ class TestHTTPTransportRequest:
 
     def test_successful_delete(self) -> None:
         t = _make_transport(api_key="k")
-        with patch.object(urllib.request, "urlopen", return_value=_mock_response({"deleted": True})):
+        with patch.object(
+            urllib.request, "urlopen", return_value=_mock_response({"deleted": True})
+        ):
             assert t.delete("/v1/webhooks/w_1") == {"deleted": True}
 
     def test_http_error_raises_api_error(self) -> None:
         t = _make_transport(api_key="k")
         exc = urllib.error.HTTPError(
-            url="http://localhost", code=401, msg="Unauthorized", hdrs=None, fp=BytesIO(b"not authorized")
+            url="http://localhost",
+            code=401,
+            msg="Unauthorized",
+            hdrs=None,
+            fp=BytesIO(b"not authorized"),
         )
         with patch.object(urllib.request, "urlopen", side_effect=exc):
             with pytest.raises(APIError) as info:
@@ -167,7 +179,11 @@ class TestHTTPTransportRequest:
     def test_retries_on_503_then_succeeds(self) -> None:
         t = _make_transport(api_key="k", max_retries=2)
         err = urllib.error.HTTPError(
-            url="http://localhost", code=503, msg="Unavailable", hdrs=None, fp=BytesIO(b"")
+            url="http://localhost",
+            code=503,
+            msg="Unavailable",
+            hdrs=None,
+            fp=BytesIO(b""),
         )
         mock_resp = _mock_response({"ok": True})
         with patch.object(urllib.request, "urlopen", side_effect=[err, mock_resp]):
@@ -176,7 +192,11 @@ class TestHTTPTransportRequest:
     def test_retries_on_429(self) -> None:
         t = _make_transport(api_key="k", max_retries=2)
         err = urllib.error.HTTPError(
-            url="http://localhost", code=429, msg="Rate limited", hdrs=None, fp=BytesIO(b"")
+            url="http://localhost",
+            code=429,
+            msg="Rate limited",
+            hdrs=None,
+            fp=BytesIO(b""),
         )
         mock_resp = _mock_response({"ok": True})
         with patch.object(urllib.request, "urlopen", side_effect=[err, mock_resp]):
@@ -184,14 +204,18 @@ class TestHTTPTransportRequest:
 
     def test_url_error_raises_api_error(self) -> None:
         t = _make_transport(api_key="k", max_retries=1)
-        with patch.object(urllib.request, "urlopen", side_effect=urllib.error.URLError("refused")):
+        with patch.object(
+            urllib.request, "urlopen", side_effect=urllib.error.URLError("refused")
+        ):
             with pytest.raises(APIError) as info:
                 t.get("/v1/health")
         assert info.value.status_code == 0
 
     def test_max_retries_exceeded_url_error(self) -> None:
         t = _make_transport(api_key="k", max_retries=2)
-        with patch.object(urllib.request, "urlopen", side_effect=urllib.error.URLError("refused")):
+        with patch.object(
+            urllib.request, "urlopen", side_effect=urllib.error.URLError("refused")
+        ):
             with pytest.raises(APIError) as info:
                 t.get("/v1/health")
         assert info.value.status_code == 0
@@ -265,11 +289,15 @@ class TestProcurementClientInit:
         assert isinstance(c.billing, BillingResource)
 
     def test_trailing_slash_stripped(self) -> None:
-        c = ProcurementClient(base_url="http://localhost:8000/", api_key="k", max_retries=1)
+        c = ProcurementClient(
+            base_url="http://localhost:8000/", api_key="k", max_retries=1
+        )
         assert isinstance(c.intelligence, IntelligenceResource)
 
     def test_access_token_auth(self) -> None:
-        c = ProcurementClient(base_url="http://localhost:8000", access_token="jwt.abc", max_retries=1)
+        c = ProcurementClient(
+            base_url="http://localhost:8000", access_token="jwt.abc", max_retries=1
+        )
         assert isinstance(c.billing, BillingResource)
 
 
