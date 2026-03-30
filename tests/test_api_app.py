@@ -101,6 +101,63 @@ def _make_fmcg_upload(*, discount_pct: float, net_multiplier: float = 1.0) -> By
     return BytesIO(df.to_csv(index=False).encode("utf-8"))
 
 
+def _make_pilot_upload() -> BytesIO:
+    rows: list[dict[str, object]] = []
+    dates = ["1/1/2021", "1/2/2021", "1/3/2021", "1/4/2021"]
+    stores = ["STORE001", "STORE002", "STORE003", "STORE004"]
+    for day_index, day in enumerate(dates, start=1):
+        for store in stores:
+            is_treatment = store in {"STORE003", "STORE004"}
+            post_period = day_index >= 3
+            discount_pct = 0.5
+            purchase_cost = 6.0
+            if is_treatment and post_period:
+                discount_pct = 0.4
+                purchase_cost = 5.0
+
+            gross_sales = 200.0
+            net_sales = gross_sales * (1 - discount_pct)
+            margin_pct = (net_sales - (purchase_cost * 10)) / net_sales
+            rows.append(
+                {
+                    "date": day,
+                    "year": 2021,
+                    "month": 1,
+                    "day": day_index,
+                    "weekofyear": 1,
+                    "weekday": (day_index + 3) % 7,
+                    "is_weekend": 1 if day_index in {2, 3} else 0,
+                    "is_holiday": 0,
+                    "temperature": 25.0,
+                    "rain_mm": 0.0,
+                    "store_id": store,
+                    "country": "Germany",
+                    "city": "Berlin",
+                    "channel": "Hypermarket",
+                    "latitude": 52.52,
+                    "longitude": 13.39,
+                    "sku_id": "SKU001",
+                    "sku_name": "BrandA Shampoo",
+                    "category": "Personal Care",
+                    "subcategory": "Shampoo",
+                    "brand": "BrandA",
+                    "units_sold": 10,
+                    "list_price": 20.0,
+                    "discount_pct": discount_pct,
+                    "promo_flag": 1,
+                    "gross_sales": gross_sales,
+                    "net_sales": net_sales,
+                    "stock_on_hand": 25,
+                    "stock_out_flag": 0,
+                    "lead_time_days": 5,
+                    "supplier_id": "S001",
+                    "purchase_cost": purchase_cost,
+                    "margin_pct": round(margin_pct, 3),
+                }
+            )
+    return BytesIO(pd.DataFrame(rows).to_csv(index=False).encode("utf-8"))
+
+
 def test_health_endpoint_returns_ok():
     response = _request("GET", "/health")
     assert response.status_code == 200
@@ -210,6 +267,29 @@ def test_fmcg_event_lifecycle_exposes_history():
     assert len(history) == 2
     assert history[0]["event_id"] == event["event_id"]
     assert history[1]["related_event_id"] == event["event_id"]
+
+
+def test_fmcg_pilot_evaluation_returns_incremental_lift():
+    upload = _make_pilot_upload()
+    response = _request(
+        "POST",
+        "/fmcg/pilot/evaluate?intervention_date=2021-01-03",
+        headers=_headers("analyst"),
+        files={"file": ("pilot.csv", upload, "text/csv")},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["primary_metric"] == "net_sales_per_store_day"
+    assert payload["primary_incremental_lift"] > 0
+    assert payload["cohort"]["control_stores"] == ["STORE001", "STORE002"]
+    assert payload["cohort"]["treatment_stores"] == ["STORE003", "STORE004"]
+    net_sales_impact = next(
+        impact
+        for impact in payload["metric_impacts"]
+        if impact["metric"] == "net_sales_per_store_day"
+    )
+    assert net_sales_impact["incremental_lift"] == 20.0
+    assert net_sales_impact["favorable_movement"] is True
 
 
 def test_fmcg_event_stats_include_integrity_fields():

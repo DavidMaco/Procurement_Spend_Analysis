@@ -15,7 +15,15 @@ from .models import (
     load_fmcg_csv,
     validate_fmcg_dataframe,
 )
-from .pilot import PilotCohort, PilotConfig, select_pilot_cohort
+from .pilot import (
+    PilotArmSummary,
+    PilotCohort,
+    PilotConfig,
+    PilotImpactReport,
+    PilotMetricImpact,
+    evaluate_pilot_impact,
+    select_pilot_cohort,
+)
 from .reconciliation import ReconciliationSuite, default_reconciliation_suite
 
 # M2 — Baseline apps
@@ -55,7 +63,11 @@ __all__ = [
     "default_kpi_catalog",
     "PilotConfig",
     "PilotCohort",
+    "PilotArmSummary",
+    "PilotMetricImpact",
+    "PilotImpactReport",
     "select_pilot_cohort",
+    "evaluate_pilot_impact",
     # M2 — Variance alerts
     "VarianceAlertEngine",
     "VarianceRule",

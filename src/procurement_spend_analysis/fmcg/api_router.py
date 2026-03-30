@@ -20,7 +20,12 @@ from procurement_spend_analysis.fmcg.features import default_feature_store
 from procurement_spend_analysis.fmcg.kpi_catalog import default_kpi_catalog
 from procurement_spend_analysis.fmcg.metrics import default_metrics_layer
 from procurement_spend_analysis.fmcg.models import validate_fmcg_dataframe
-from procurement_spend_analysis.fmcg.pilot import PilotCohort, select_pilot_cohort
+from procurement_spend_analysis.fmcg.pilot import (
+    PilotCohort,
+    PilotImpactReport,
+    evaluate_pilot_impact,
+    select_pilot_cohort,
+)
 from procurement_spend_analysis.fmcg.reconciliation import (
     ReconciliationSuite,
     default_reconciliation_suite,
@@ -191,6 +196,30 @@ async def run_pilot_selection(
 
     cohort: PilotCohort = select_pilot_cohort(df)
     return cohort.model_dump()
+
+
+@router.post("/pilot/evaluate")
+async def evaluate_pilot_selection(
+    file: UploadFile = File(...),
+    intervention_date: str | None = None,
+    _: Annotated[str, Depends(require_permission(Permission.UPLOAD_DATA))] = "",
+) -> dict[str, Any]:
+    """Upload an FMCG CSV and evaluate pilot performance with a control baseline."""
+    df = await _read_upload(file)
+    try:
+        df = validate_fmcg_dataframe(df)
+        report: PilotImpactReport = evaluate_pilot_impact(
+            df,
+            intervention_date=intervention_date,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Schema validation failed: {exc}"
+        ) from exc
+
+    return report.model_dump()
 
 
 @router.get("/features")

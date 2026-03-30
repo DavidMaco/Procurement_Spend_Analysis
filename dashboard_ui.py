@@ -1,5 +1,16 @@
 from __future__ import annotations
 
+import os
+import sys
+
+# Streamlit Cloud does not run `pip install -e .`, so the src-layout package is
+# not automatically on sys.path.  Add it once here — before any import that
+# depends on procurement_spend_analysis.* — so every page that imports this
+# module gets the correct path too.
+_src_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "src")
+if _src_dir not in sys.path:
+    sys.path.insert(0, _src_dir)
+
 from dataclasses import asdict
 from datetime import date
 from typing import Any

@@ -11,7 +11,11 @@ from procurement_spend_analysis.fmcg.features import default_feature_store
 from procurement_spend_analysis.fmcg.kpi_catalog import default_kpi_catalog
 from procurement_spend_analysis.fmcg.metrics import default_metrics_layer
 from procurement_spend_analysis.fmcg.models import validate_fmcg_dataframe
-from procurement_spend_analysis.fmcg.pilot import PilotConfig, select_pilot_cohort
+from procurement_spend_analysis.fmcg.pilot import (
+    PilotConfig,
+    evaluate_pilot_impact,
+    select_pilot_cohort,
+)
 from procurement_spend_analysis.fmcg.reconciliation import (
     ReconciliationSuite,
     default_reconciliation_suite,
@@ -131,6 +135,66 @@ def sample_fmcg_df() -> pd.DataFrame:
                         )
                     )
                     idx += 1
+    return pd.DataFrame(rows)
+
+
+@pytest.fixture()
+def pilot_measurement_df() -> pd.DataFrame:
+    """Controlled pilot dataset with a clear treatment uplift after intervention."""
+    rows: list[dict] = []
+    dates = ["1/1/2021", "1/2/2021", "1/3/2021", "1/4/2021"]
+    stores = ["STORE001", "STORE002", "STORE003", "STORE004"]
+    for day_index, day in enumerate(dates, start=1):
+        for store in stores:
+            is_treatment = store in {"STORE003", "STORE004"}
+            post_period = day_index >= 3
+            list_price = 20.0
+            units_sold = 10
+            discount_pct = 0.5
+            purchase_cost = 6.0
+            if is_treatment and post_period:
+                discount_pct = 0.4
+                purchase_cost = 5.0
+            gross_sales = units_sold * list_price
+            net_sales = gross_sales * (1 - discount_pct)
+            margin_pct = (net_sales - (purchase_cost * units_sold)) / net_sales
+            rows.append(
+                {
+                    "date": day,
+                    "year": 2021,
+                    "month": 1,
+                    "day": day_index,
+                    "weekofyear": 1,
+                    "weekday": (day_index + 3) % 7,
+                    "is_weekend": 1 if day_index in {2, 3} else 0,
+                    "is_holiday": 0,
+                    "temperature": 24.0,
+                    "rain_mm": 0.0,
+                    "store_id": store,
+                    "country": "Germany",
+                    "city": "Berlin",
+                    "channel": "Hypermarket",
+                    "latitude": 52.52,
+                    "longitude": 13.39,
+                    "sku_id": "SKU001",
+                    "sku_name": "BrandA Shampoo",
+                    "category": "Personal Care",
+                    "subcategory": "Shampoo",
+                    "brand": "BrandA",
+                    "units_sold": units_sold,
+                    "list_price": list_price,
+                    "discount_pct": discount_pct,
+                    "promo_flag": 1,
+                    "gross_sales": gross_sales,
+                    "net_sales": net_sales,
+                    "stock_on_hand": 25,
+                    "stock_out_flag": 0,
+                    "lead_time_days": 5,
+                    "supplier_id": "S001",
+                    "purchase_cost": purchase_cost,
+                    "margin_pct": round(margin_pct, 3),
+                }
+            )
     return pd.DataFrame(rows)
 
 
@@ -291,3 +355,29 @@ class TestPilot:
         )
         cohort = select_pilot_cohort(sample_fmcg_df, config=config)
         assert len(cohort.categories) <= 2
+
+    def test_pilot_impact_reports_incremental_uplift(
+        self, pilot_measurement_df: pd.DataFrame
+    ) -> None:
+        report = evaluate_pilot_impact(
+            pilot_measurement_df,
+            intervention_date="2021-01-03",
+        )
+
+        assert report.primary_metric == "net_sales_per_store_day"
+        assert report.primary_incremental_lift > 0
+        net_sales_impact = next(
+            impact
+            for impact in report.metric_impacts
+            if impact.metric == "net_sales_per_store_day"
+        )
+        assert net_sales_impact.favorable_movement is True
+        assert net_sales_impact.incremental_lift == pytest.approx(20.0)
+
+        purchase_cost_impact = next(
+            impact
+            for impact in report.metric_impacts
+            if impact.metric == "purchase_cost_per_unit"
+        )
+        assert purchase_cost_impact.favorable_movement is True
+        assert purchase_cost_impact.incremental_lift == pytest.approx(-1.0)

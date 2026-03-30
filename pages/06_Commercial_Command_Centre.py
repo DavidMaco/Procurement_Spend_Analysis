@@ -17,6 +17,7 @@ from dashboard_ui import (
     configure_page,
     evaluate_fmcg_alerts,
     fmcg_user_has_permission,
+    format_currency_abbr,
     log_fmcg_recommendation,
     page_header,
     recommendation_history_df,
@@ -26,6 +27,7 @@ from dashboard_ui import (
 )
 from procurement_spend_analysis.fmcg.access_control import Permission
 from procurement_spend_analysis.fmcg.event_log import ActionTaken
+from procurement_spend_analysis.fmcg.pilot import evaluate_pilot_impact
 
 
 configure_page("Commercial Command Centre", icon="💹")
@@ -75,6 +77,68 @@ def _demo_sales() -> pd.DataFrame:
     df = pd.DataFrame(rows)
     df["date"] = pd.to_datetime(df["date"])
     return df
+
+
+@st.cache_data(show_spinner=False)
+def _demo_pilot_sales() -> pd.DataFrame:
+    """Return a canonical pilot dataset with a clear commercial intervention uplift."""
+    rows: list[dict[str, object]] = []
+    dates = pd.date_range("2024-03-25", periods=8, freq="D")
+    stores = ["STORE001", "STORE002", "STORE003", "STORE004"]
+    for date_value in dates:
+        for store in stores:
+            is_treatment = store in {"STORE003", "STORE004"}
+            post_period = date_value >= pd.Timestamp("2024-03-29")
+            discount_pct = 0.18
+            purchase_cost = 62.0
+            units_sold = 36
+            if is_treatment and post_period:
+                discount_pct = 0.12
+                purchase_cost = 58.0
+                units_sold = 43
+
+            gross_sales = float(units_sold * 120.0)
+            net_sales = gross_sales * (1 - discount_pct)
+            purchase_cost_total = purchase_cost * units_sold
+            margin_pct = (net_sales - purchase_cost_total) / net_sales if net_sales else 0.0
+            rows.append(
+                {
+                    "date": date_value.strftime("%Y-%m-%d"),
+                    "year": date_value.year,
+                    "month": date_value.month,
+                    "day": date_value.day,
+                    "weekofyear": int(date_value.isocalendar().week),
+                    "weekday": date_value.weekday(),
+                    "is_weekend": int(date_value.weekday() >= 5),
+                    "is_holiday": 0,
+                    "temperature": 27.0,
+                    "rain_mm": 0.0,
+                    "store_id": store,
+                    "country": "Nigeria",
+                    "city": "Lagos",
+                    "channel": "Hypermarket",
+                    "latitude": 6.5244,
+                    "longitude": 3.3792,
+                    "sku_id": "SKU-PER-001",
+                    "sku_name": "Premium Body Wash",
+                    "category": "Personal Care",
+                    "subcategory": "Body Wash",
+                    "brand": "Northstar",
+                    "units_sold": units_sold,
+                    "list_price": 120.0,
+                    "discount_pct": discount_pct,
+                    "promo_flag": 1,
+                    "gross_sales": gross_sales,
+                    "net_sales": net_sales,
+                    "stock_on_hand": 200,
+                    "stock_out_flag": 0,
+                    "lead_time_days": 4,
+                    "supplier_id": "SUP-001",
+                    "purchase_cost": purchase_cost,
+                    "margin_pct": round(margin_pct, 3),
+                }
+            )
+    return pd.DataFrame(rows)
 
 
 df = _demo_sales()
@@ -267,6 +331,91 @@ if not history.empty:
                     action=ActionTaken.REJECTED,
                 )
                 st.rerun()
+
+st.divider()
+
+# ---------------------------------------------------------------------------
+# Pilot impact scorecard
+# ---------------------------------------------------------------------------
+
+st.markdown("##### Pilot impact scorecard")
+pilot_report = evaluate_pilot_impact(
+    _demo_pilot_sales(),
+    intervention_date="2024-03-29",
+)
+pilot_impacts = pd.DataFrame(
+    [impact.model_dump() for impact in pilot_report.metric_impacts]
+)
+pilot_summary = {summary.metric: summary for summary in pilot_report.metric_impacts}
+pilot_cols = st.columns(4, gap="small")
+pilot_cols[0].metric(
+    "Incremental net sales / store-day",
+    f"₦{pilot_report.primary_incremental_lift:,.0f}",
+    None
+    if pilot_report.primary_incremental_lift_pct is None
+    else f"{pilot_report.primary_incremental_lift_pct:.1f}% vs treatment pre",
+)
+pilot_cols[1].metric(
+    "Margin lift / store-day",
+    f"₦{pilot_summary['contribution_margin_per_store_day'].incremental_lift:,.0f}",
+)
+pilot_cols[2].metric(
+    "Purchase-cost movement / unit",
+    f"₦{pilot_summary['purchase_cost_per_unit'].incremental_lift:,.2f}",
+)
+pilot_cols[3].metric(
+    "Leakage movement",
+    f"{pilot_summary['gross_to_net_leakage_pct'].incremental_lift:.1f} pts",
+)
+
+pilot_chart = px.bar(
+    pilot_impacts,
+    x="metric",
+    y="incremental_lift",
+    color="favorable_movement",
+    color_discrete_map={True: PALETTE[0], False: PALETTE[3]},
+    text="incremental_lift",
+)
+pilot_chart.update_traces(texttemplate="%{text:.2f}", textposition="outside")
+pilot_chart.update_layout(
+    showlegend=False,
+    xaxis_title="",
+    yaxis_title="Incremental lift",
+)
+
+pilot_left, pilot_right = st.columns([1.15, 0.85], gap="large")
+with pilot_left:
+    render_chart(pilot_chart, height=320)
+
+with pilot_right:
+    st.caption(
+        "Difference-in-differences readout for a promo-depth intervention. Positive values are good for revenue and margin metrics; negative values are good for leakage and purchase cost."
+    )
+    st.dataframe(
+        pilot_impacts[
+            [
+                "metric",
+                "control_change",
+                "treatment_change",
+                "incremental_lift",
+                "favorable_movement",
+            ]
+        ],
+        use_container_width=True,
+        hide_index=True,
+        height=260,
+    )
+    st.caption(
+        f"Treatment stores: {', '.join(pilot_report.cohort.treatment_stores)}. Control stores: {', '.join(pilot_report.cohort.control_stores)}."
+    )
+    post_net_sales = next(
+        summary.net_sales
+        for summary in pilot_report.arm_summaries
+        if summary.arm == "treatment" and summary.period == "post"
+    )
+    st.caption(
+        f"Post-period treatment net sales: {format_currency_abbr(post_net_sales)} across {pilot_report.post_period[0]} to {pilot_report.post_period[1]}."
+    )
 
 st.divider()
 
