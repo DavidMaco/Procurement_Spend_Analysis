@@ -119,7 +119,7 @@ with alert_col:
         st.metric("Active alerts", f"{len(procurement_alerts)}")
         st.dataframe(
             procurement_alerts[["rule_name", "severity", "metric_column", "variance_pct", "message"]],
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=260,
         )
@@ -169,7 +169,7 @@ if not history.empty:
     st.markdown("##### Procurement recommendation history")
     st.dataframe(
         history[["event_id", "action_taken", "approver_id", "confidence_score", "recommendation_payload"]],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=220,
     )

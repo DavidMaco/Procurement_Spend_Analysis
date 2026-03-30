@@ -77,7 +77,7 @@ with right:
     )
     st.dataframe(
         summary_df[["metric", "Value"]],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=340,
         column_config={

@@ -84,7 +84,7 @@ if integrity_report["rows"]:
             "recorded_entry_hash",
             "expected_entry_hash",
         ]],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=260,
     )
@@ -103,7 +103,7 @@ with left:
     if type_df.empty:
         st.info("No recommendation events recorded yet.")
     else:
-        st.dataframe(type_df.sort_values("events", ascending=False), use_container_width=True, hide_index=True)
+        st.dataframe(type_df.sort_values("events", ascending=False), width="stretch", hide_index=True)
 
 with right:
     st.markdown("##### Action mix")
@@ -113,7 +113,7 @@ with right:
             for key, value in stats["action_counts"].items()
         ]
     )
-    st.dataframe(action_df, use_container_width=True, hide_index=True)
+    st.dataframe(action_df, width="stretch", hide_index=True)
 
 st.divider()
 
@@ -125,7 +125,7 @@ if not history.empty:
         history["event_day"] = pd.to_datetime(history["timestamp"], errors="coerce").dt.date
         daily = history.groupby("event_day", as_index=False).size().rename(columns={"size": "events"})
         daily_fig = px.bar(daily, x="event_day", y="events")
-        st.plotly_chart(daily_fig, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(daily_fig, width="stretch", config={"displayModeBar": False})
     with summary_right:
         st.markdown("##### Approval latency")
         root_df = history[history["related_event_id"].isna()][["event_id", "timestamp"]].rename(
@@ -142,7 +142,7 @@ if not history.empty:
             ).dt.total_seconds() / 3600
             st.metric("Average approval latency", f"{latency['latency_hours'].mean():.2f} hrs")
             latency_fig = px.box(latency, x="action_taken", y="latency_hours")
-            st.plotly_chart(latency_fig, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(latency_fig, width="stretch", config={"displayModeBar": False})
 
 if history.empty:
     st.info("No recommendation history available yet.")
@@ -172,7 +172,7 @@ else:
             "approver_id",
             "timestamp",
         ]],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=320,
     )
@@ -197,7 +197,7 @@ with ops_left:
         data=get_fmcg_event_log().to_jsonl(),
         file_name="fmcg_recommendation_events.jsonl",
         mime="application/x-ndjson",
-        use_container_width=True,
+        width="stretch",
     )
     archive_data = get_fmcg_event_log().archive_jsonl()
     if archive_data:
@@ -206,13 +206,13 @@ with ops_left:
             data=archive_data,
             file_name="fmcg_recommendation_events.archive.jsonl",
             mime="application/x-ndjson",
-            use_container_width=True,
+            width="stretch",
         )
 
 with ops_right:
     st.markdown("##### Ledger maintenance")
     if fmcg_user_has_permission(principal, Permission.VIEW_AUDIT_LOG):
-        if st.button("Compact persisted ledger", use_container_width=True, key="compact_fmcg_ledger"):
+        if st.button("Compact persisted ledger", width="stretch", key="compact_fmcg_ledger"):
             retained = get_fmcg_event_log().compact()
             st.success(f"Ledger compacted. Retained {retained} events.")
         archive_days = st.number_input(
@@ -223,7 +223,7 @@ with ops_right:
             step=1,
             key="archive_fmcg_days",
         )
-        if st.button("Archive resolved history", use_container_width=True, key="archive_fmcg_ledger"):
+        if st.button("Archive resolved history", width="stretch", key="archive_fmcg_ledger"):
             cutoff = (datetime.now(timezone.utc) - timedelta(days=int(archive_days))).isoformat()
             result = get_fmcg_event_log().archive_before(cutoff)
             st.success(

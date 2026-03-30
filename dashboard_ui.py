@@ -249,7 +249,7 @@ def apply_chart_theme(fig, height: int = 380) -> None:
 def render_chart(fig, height: int = 380) -> None:
     """Apply theme to *fig* and render it with the Plotly modebar hidden."""
     apply_chart_theme(fig, height=height)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
 
 
 def format_currency(value: float, currency: str = "NGN") -> str:
@@ -303,7 +303,7 @@ def ensure_dashboard_bundle() -> dict:
             data=export_upload_template_pack(),
             file_name="company_upload_templates.zip",
             mime="application/zip",
-            use_container_width=True,
+            width="stretch",
         )
 
         bundle = None
@@ -323,7 +323,7 @@ def ensure_dashboard_bundle() -> dict:
                 key="gen_incidents",
             )
             seed = st.number_input("Random seed", min_value=1, max_value=999999, value=42, step=1, key="gen_seed")
-            if st.button("Generate dataset", use_container_width=True, key="gen_button"):
+            if st.button("Generate dataset", width="stretch", key="gen_button"):
                 bundle = cached_generated_bundle(num_orders, seed, num_quality_incidents)
                 st.session_state["dashboard_bundle"] = bundle
             else:
@@ -407,7 +407,7 @@ def powerbi_pack_download(bundle: dict) -> None:
         data=export_powerbi_pack(bundle),
         file_name="procurement_powerbi_pack.zip",
         mime="application/zip",
-        use_container_width=True,
+        width="stretch",
     )
 
 

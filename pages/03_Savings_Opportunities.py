@@ -47,7 +47,7 @@ with right:
         context["filtered_optimization"].sort_values(
             ["category", "composite_score"], ascending=[True, False]
         ),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=400,
     )
@@ -62,7 +62,7 @@ with left2:
         context["filtered_constrained"].sort_values(
             ["category", "projected_spend_ngn"], ascending=[True, False]
         ),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -70,6 +70,6 @@ with right2:
     st.markdown("##### Scenario savings summary")
     st.dataframe(
         context["analytics"]["savings_scenarios"],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )

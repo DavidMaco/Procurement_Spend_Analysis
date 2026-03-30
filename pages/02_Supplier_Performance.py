@@ -32,7 +32,7 @@ with left:
     st.markdown("##### Supplier scorecard")
     st.dataframe(
         context["filtered_suppliers"].sort_values("total_spend_ngn", ascending=False),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=360,
     )

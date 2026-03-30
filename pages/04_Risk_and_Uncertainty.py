@@ -67,6 +67,6 @@ st.divider()
 st.markdown("##### Monte Carlo savings bounds")
 st.dataframe(
     context["analytics"]["monte_carlo_uncertainty_bounds"],
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
 )

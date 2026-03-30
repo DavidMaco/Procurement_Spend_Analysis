@@ -36,13 +36,13 @@ with left:
 with right:
     st.markdown("##### Upload schema reference")
     schema_df = schema_reference_table()
-    st.dataframe(schema_df, use_container_width=True, hide_index=True)
+    st.dataframe(schema_df, width="stretch", hide_index=True)
     st.download_button(
         "⬇️  Download schema reference CSV",
         data=schema_df.to_csv(index=False),
         file_name="upload_schema_reference.csv",
         mime="text/csv",
-        use_container_width=True,
+        width="stretch",
     )
 
 st.divider()
@@ -56,4 +56,4 @@ st.divider()
 # ── raw table preview ────────────────────────────────────────────────────────
 with st.expander("Preview normalized raw tables", expanded=False):
     selected_table = st.selectbox("Table", list(raw.keys()))
-    st.dataframe(raw[selected_table].head(200), use_container_width=True, hide_index=True)
+    st.dataframe(raw[selected_table].head(200), width="stretch", hide_index=True)
